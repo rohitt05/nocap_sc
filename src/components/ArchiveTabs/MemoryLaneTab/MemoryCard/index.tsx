@@ -1,0 +1,1 @@
+export { default } from './MemoryCard'; // Import and export in one line

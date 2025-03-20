@@ -1,0 +1,196 @@
+{
+    "responses_received": [
+        {
+            "id": "r1",
+            "user": "Amit",
+            "profile_picture_url": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&cs=tinysrgb&w=600",
+            "type": "text",
+            "text": "Had an amazing workout session!",
+            "timestamp": "2025-02-28T09:23:45Z",
+            "reactions": [
+                {
+                    "user": "Rohit",
+                    "profile_picture_url": "https://images.pexels.com/photos/3586765/pexels-photo-3586765.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+                    "emoji": "🔥"
+                },
+                {
+                    "user": "Priya",
+                    "profile_picture_url": "https://images.pexels.com/photos/1239288/pexels-photo-1239288.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "😂"
+                }
+            ]
+        },
+        {
+            "id": "r2",
+            "user": "Priya",
+            "profile_picture_url": "https://images.pexels.com/photos/3792581/pexels-photo-3792581.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            "type": "audio",
+            "media_url": " https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
+            "duration": "0:45",
+            "timestamp": "2025-02-28T10:15:22Z",
+            "reactions": [
+                {
+                    "user": "Rohit",
+                    "profile_picture_url": "https://images.pexels.com/photos/3586765/pexels-photo-3586765.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+                    "emoji": "❤️"
+                }
+            ]
+        },
+        {
+            "id": "r3",
+            "user": "Rahul",
+            "profile_picture_url": "https://images.pexels.com/photos/4067753/pexels-photo-4067753.jpeg?auto=compress&cs=tinysrgb&w=600",
+            "type": "image",
+            "media_url": "https://images.pexels.com/photos/29176517/pexels-photo-29176517/free-photo-of-dramatic-orange-cloud-at-sunset.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            "caption": "This sunset made my day!",
+            "timestamp": "2025-02-28T11:42:18Z",
+            "reactions": [
+                {
+                    "user": "Amit",
+                    "profile_picture_url": "https://example.com/profile_pics/amit.jpg",
+                    "emoji": "😍"
+                },
+                {
+                    "user": "Priya",
+                    "profile_picture_url": "https://images.pexels.com/photos/1239288/pexels-photo-1239288.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "🌅"
+                }
+            ]
+        },
+        {
+            "id": "r4",
+            "user": "Neha",
+            "profile_picture_url": "https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=600",
+            "type": "video",
+            "media_url": "https://videos.pexels.com/video-files/18294277/18294277-sd_360_640_30fps.mp4",
+            "caption": "Cutest baby ever! 😂",
+            "timestamp": "2025-02-28T12:31:05Z",
+            "reactions": [
+                {
+                    "user": "Rohit",
+                    "profile_picture_url": "https://images.pexels.com/photos/3586765/pexels-photo-3586765.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+                    "emoji": "😂"
+                },
+                {
+                    "user": "Rahul",
+                    "profile_picture_url": "https://images.pexels.com/photos/4067753/pexels-photo-4067753.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "❤️"
+                }
+            ]
+        },
+        {
+            "id": "r5",
+            "user": "Vikram",
+            "profile_picture_url": "https://images.pexels.com/photos/26583585/pexels-photo-26583585/free-photo-of-bay-surrounded-by-a-forest.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load",
+            "type": "gif",
+            "media_url": "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYXYzMHNycG5wOTIxNmpqajNoa2p4NHBlb2NpYWExZG1xcWdzMHRuZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/zZMTVkTeEfeEg/giphy.gif",
+            "caption": "This cat vibes with me!",
+            "timestamp": "2025-02-28T13:45:33Z",
+            "reactions": [
+                {
+                    "user": "Neha",
+                    "profile_picture_url": "https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "🤣"
+                }
+            ]
+        },
+        {
+            "id": "r6",
+            "user": "Aditi",
+            "profile_picture_url": "https://images.pexels.com/photos/3444087/pexels-photo-3444087.jpeg?auto=compress&cs=tinysrgb&w=600",
+            "type": "text",
+            "text": "Random act of kindness: Bought coffee for a stranger ☕",
+            "timestamp": "2025-02-28T14:18:40Z",
+            "reactions": [
+                {
+                    "user": "Rahul",
+                    "profile_picture_url": "https://images.pexels.com/photos/4067753/pexels-photo-4067753.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "👏"
+                },
+                {
+                    "user": "Amit",
+                    "profile_picture_url": "https://example.com/profile_pics/amit.jpg",
+                    "emoji": "💖"
+                }
+            ]
+        },
+        {
+            "id": "r7",
+            "user": "Sandeep",
+            "profile_picture_url": "https://images.pexels.com/photos/30889156/pexels-photo-30889156/free-photo-of-close-up-of-a-deer-in-thailand-s-natural-habitat.jpeg?auto=compress&cs=tinysrgb&w=600",
+            "type": "audio",
+            "media_url": " https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
+            "duration": "1:23",
+            "timestamp": "2025-02-28T15:02:17Z",
+            "reactions": [
+                {
+                    "user": "Vikram",
+                    "profile_picture_url": "https://images.pexels.com/photos/26583585/pexels-photo-26583585/free-photo-of-bay-surrounded-by-a-forest.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load",
+                    "emoji": "🔥"
+                },
+                {
+                    "user": "Neha",
+                    "profile_picture_url": "https://images.pexels.com/photos/1499327/pexels-photo-1499327.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "😍"
+                }
+            ]
+        },
+        {
+            "id": "r8",
+            "user": "Megha",
+            "profile_picture_url": "https://images.pexels.com/photos/1102341/pexels-photo-1102341.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            "type": "video",
+            "media_url": "https://videos.pexels.com/video-files/28955423/12527565_360_640_30fps.mp4",
+            "caption": "Learned a new dance move today! 💃",
+            "timestamp": "2025-02-28T16:37:49Z",
+            "reactions": [
+                {
+                    "user": "Sandeep",
+                    "profile_picture_url": "https://example.com/profile_pics/sandeep.jpg",
+                    "emoji": "👏"
+                }
+            ]
+        },
+        {
+            "id": "r9",
+            "user": "Kunal",
+            "profile_picture_url": "https://example.com/profile_pics/kunal.jpg",
+            "type": "gif",
+            "media_url": "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxYzBraWJ1NGFsbzRzYWd4OWNpcGNvaGc3cnF4ODNrcGZuMWgzOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/J4VVMzUcPQE0IbFE4z/giphy.gif",
+            "caption": "Weekend mood!",
+            "timestamp": "2025-02-28T17:52:01Z",
+            "reactions": [
+                {
+                    "user": "Priya",
+                    "profile_picture_url": "https://images.pexels.com/photos/1239288/pexels-photo-1239288.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "🎉"
+                },
+                {
+                    "user": "Rahul",
+                    "profile_picture_url": "https://images.pexels.com/photos/4067753/pexels-photo-4067753.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "🍾"
+                }
+            ]
+        },
+        {
+            "id": "r10",
+            "user": "Ritika",
+            "profile_picture_url": "https://example.com/profile_pics/ritika.jpg",
+            "type": "text",
+            "text": "Baked my first cake today! 🎂",
+            "timestamp": "2025-02-28T18:10:22Z",
+            "reactions": [
+                {
+                    "user": "Aditi",
+                    "profile_picture_url": "https://images.pexels.com/photos/3444087/pexels-photo-3444087.jpeg?auto=compress&cs=tinysrgb&w=600",
+                    "emoji": "😍"
+                },
+                {
+                    "user": "Amit",
+                    "profile_picture_url": "https://example.com/profile_pics/amit.jpg",
+                    "emoji": "😋"
+                }
+            ]
+        }
+    ]
+}
