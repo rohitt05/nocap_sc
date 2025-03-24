@@ -4,7 +4,7 @@ import LastYearTab from '../../components/ArchiveTabs/LastYearTab';
 import MemoryLaneTab from '../../components/ArchiveTabs/MemoryLaneTab';
 
 export default function Archives() {
-    const [activeTab, setActiveTab] = useState('lastYear');
+    const [activeTab, setActiveTab] = useState('memoryLane');
 
     const handleTabPress = (tab) => {
         setActiveTab(tab);
@@ -22,6 +22,18 @@ export default function Archives() {
                         <TouchableOpacity
                             style={[
                                 styles.tabButton,
+                                activeTab === 'memoryLane' && styles.activeTabButton
+                            ]}
+                            onPress={() => handleTabPress('memoryLane')}
+                        >
+                            <Text style={[
+                                styles.tabText,
+                                activeTab === 'memoryLane' && styles.activeTabText
+                            ]}>Memory Lane</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.tabButton,
                                 activeTab === 'lastYear' && styles.activeTabButton
                             ]}
                             onPress={() => handleTabPress('lastYear')}
@@ -32,25 +44,13 @@ export default function Archives() {
                                 styles.noWrap
                             ]}>Last Year, This Day</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.tabButton,
-                                activeTab === 'memoryLane' && styles.activeTabButton
-                            ]}
-                            onPress={() => handleTabPress('memoryLane')}
-                        >
-                            <Text style={[
-                                styles.tabText,
-                                activeTab === 'memoryLane' && styles.activeTabText
-                            ]}>Memory Lane</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
                 <View style={styles.content}>
-                    {activeTab === 'lastYear' ? (
-                        <LastYearTab />
-                    ) : (
+                    {activeTab === 'memoryLane' ? (
                         <MemoryLaneTab />
+                    ) : (
+                        <LastYearTab />
                     )}
                 </View>
             </SafeAreaView>

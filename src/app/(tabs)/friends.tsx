@@ -150,11 +150,7 @@ export default function Friends() {
                 </View>
                 <View style={styles.navbarRight}>
                     {/* Updated Link component with proper path */}
-                    <Link href="/Screens/Notifications/notificationsNewFriends" asChild>
-                        <TouchableOpacity style={styles.notificationButton}>
-                            <Ionicons name="notifications-outline" size={24} color="#fff" />
-                        </TouchableOpacity>
-                    </Link>
+                    <View style={{ width: 30 }} />
                 </View>
             </View>
 

@@ -59,11 +59,11 @@ export default function TabLayout() {
             />
 
             <Tabs.Screen
-                name="chats"
+                name="notifications"
                 options={{
                     headerShown: false,
-                    ...getCommonScreenOptions('Chats'),
-                    tabBarIcon: ({ color }) => <Ionicons name="chatbubble-ellipses" size={24} color={color} />
+                    ...getCommonScreenOptions('notifications'),
+                    tabBarIcon: ({ color }) => <Ionicons name="notifications" size={24} color={color} />
                 }}
             />
 

@@ -84,6 +84,9 @@ export const styles = StyleSheet.create({
         justifyContent: 'flex-end', // Changed to align children to the right
         zIndex: 20,
     },
+    sendButton: {
+        // color: 'white'
+    },
     overlayCaption: {
         fontSize: 16,
         color: '#fff',
@@ -110,16 +113,16 @@ export const styles = StyleSheet.create({
     },
     // Dashed reaction buttons (emoji icons)
     reactionButton: {
-        borderStyle: 'dashed',
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        marginLeft: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 8,
+        borderRadius: 25,
+        borderWidth: 1, // Underline style
+        // borderBottomColor: 'white', // Subtle underline
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderStyle: 'dashed',
+        borderColor: 'white',
     },
     menuDotsContainer: {
         zIndex: 20,
@@ -177,5 +180,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 30,
         // backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    reactionsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
     },
 });

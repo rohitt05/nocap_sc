@@ -105,16 +105,16 @@ export const styles = StyleSheet.create({
         marginRight: 5,
     },
     reactionButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.4)',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        marginLeft: 6,
-        borderStyle: "dashed",
+        marginLeft: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 8,
+        borderRadius: 25,
+        borderWidth: 1, // Underline style
+        // borderBottomColor: 'white', // Subtle underline
         justifyContent: 'center',
         alignItems: 'center',
+        borderStyle: 'dashed',
+        borderColor: 'white',
     },
     menuDotsContainer: {
         zIndex: 20,

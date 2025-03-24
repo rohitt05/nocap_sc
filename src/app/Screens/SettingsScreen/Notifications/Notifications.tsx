@@ -14,9 +14,7 @@ const Notifications = () => {
         <View style={styles.container}>
             {/* Top Navbar */}
             <View style={styles.navbar}>
-                <TouchableOpacity style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
+                <View style={styles.placeholder} />
                 <Text style={styles.navTitle}>Notifications</Text>
                 <View style={styles.placeholder} />
             </View>
@@ -39,7 +37,7 @@ const Notifications = () => {
                         </View>
                         <View style={styles.notificationInfo}>
                             <Text style={styles.notificationTitle}>Friends' Posts</Text>
-                            <Text style={styles.notificationSubtitle}>someone, someone, someone & 4 others have all posted a NoCap.</Text>
+                            <Text style={styles.notificationSubtitle}>someone just posted their response for, daily prompts</Text>
                         </View>
                         <Switch
                             value={friendsPostsEnabled}

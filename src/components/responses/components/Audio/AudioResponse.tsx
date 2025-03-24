@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ResponseItemProps } from '../../types';
 import { Entypo, FontAwesome, Feather } from '@expo/vector-icons';
@@ -8,9 +8,30 @@ import { formatTimestamp, formatTime, useAudioPlayer } from './utils';
 import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from './styles';
 import { Link } from 'expo-router';
+import ReactionPicker from '../ReactionPicker'; // Import the ReactionPicker component
 
-const AudioResponse: React.FC<ResponseItemProps> = ({ item }) => {
+// Update the ResponseItemProps to include necessary properties
+interface ExtendedResponseItemProps extends ResponseItemProps {
+    currentUserId?: string; // Added to track the current user
+}
+
+const AudioResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
     const { audioState, togglePlayback } = useAudioPlayer(item.content);
+    // State to control reaction picker visibility
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+    // Validate currentUserId early
+    const isUserAuthenticated = !!currentUserId && typeof currentUserId === 'string' && currentUserId.length > 0;
+
+    if (!isUserAuthenticated) {
+        console.log('AudioResponse: No valid currentUserId provided', { currentUserId });
+    }
+
+    // Handle reaction selection from the picker
+    const handleReactionSelected = (reactionType: string) => {
+        // Just a simple callback - we don't need to refresh reactions anymore
+        console.log(`Reaction ${reactionType} was selected for audio response`);
+    };
 
     return (
         <View style={styles.responseItem}>
@@ -74,6 +95,17 @@ const AudioResponse: React.FC<ResponseItemProps> = ({ item }) => {
                     <Text style={styles.errorText}>{audioState.error}</Text>
                 )}
 
+                {/* Only render ReactionPicker if user is authenticated */}
+                {isUserAuthenticated && (
+                    <ReactionPicker
+                        responseId={item.id}
+                        userId={currentUserId}
+                        isVisible={showReactionPicker}
+                        onClose={() => setShowReactionPicker(false)}
+                        onReactionSelected={handleReactionSelected}
+                    />
+                )}
+
                 {/* Reaction and send buttons */}
                 <View style={styles.reactionsContainer}>
                     {/* Send button without background */}
@@ -81,18 +113,28 @@ const AudioResponse: React.FC<ResponseItemProps> = ({ item }) => {
                         <Feather name="send" size={18} color="#fff" />
                     </TouchableOpacity>
 
-                    {/* Reaction buttons with light background and underline */}
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-flirt" size={18} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-happy" size={18} color="#fff" />
-                    </TouchableOpacity>
+                    {/* Only show emoji button if user is authenticated */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionPicker && additionalStyles.activeButton]}
+                            onPress={() => setShowReactionPicker(prev => !prev)}
+                        >
+                            <Entypo name="emoji-happy" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </LinearGradient>
         </View>
     );
 };
 
+// Additional styles for new components
+const additionalStyles = StyleSheet.create({
+    activeButton: {
+        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+        borderWidth: 1,
+        borderColor: '#3498db',
+    }
+});
 
 export default AudioResponse;

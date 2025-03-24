@@ -1,34 +1,24 @@
-// NotificationsNewFriends.js
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useBackNavigation } from './navigationUtils';
-import SentModal from './sentModal';
-import NotificationList from './NotificationList';
+import SentModal from '../Screens/Notifications/sentModal';
+import NotificationList from '../Screens/Notifications/NotificationList';
 
 const NotificationsNewFriends = () => {
-    // Use the custom hook for back navigation
-    const goBackToFriends = useBackNavigation('/(tabs)/friends');
-
     // State for modal visibility
     const [modalVisible, setModalVisible] = useState(false);
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header with back button */}
+            {/* Header without back button */}
             <View style={styles.header}>
-                {/* <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={goBackToFriends}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity> */}
+                <View style={styles.leftPlaceholder} />
                 <Text style={styles.headerTitle}>Notifications</Text>
-                <View style={styles.rightPlaceholder}></View>
+                <View style={styles.rightPlaceholder} />
             </View>
 
-            {/* Main content with Sent button */}
-            <View style={styles.content}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Main content with Sent button */}
                 <View style={styles.contentHeader}>
                     <View style={styles.spacer} />
                     <TouchableOpacity
@@ -36,19 +26,16 @@ const NotificationsNewFriends = () => {
                         onPress={() => setModalVisible(true)}
                     >
                         <Text style={styles.sentButtonText}>Sent</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#fff" style={styles.chevron} />
+                        <Ionicons name="chevron-down" size={16} color="#fff" style={styles.chevron} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Notification List Component */}
                 <NotificationList />
-            </View>
+            </ScrollView>
 
             {/* Sent Modal */}
-            <SentModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-            />
+            <SentModal visible={modalVisible} onClose={() => setModalVisible(false)} />
         </SafeAreaView>
     );
 };
@@ -65,8 +52,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         height: 50,
     },
-    backButton: {
-        padding: 8,
+    leftPlaceholder: {
+        width: 40, // Added to maintain the header balance
     },
     headerTitle: {
         color: '#fff',
@@ -76,8 +63,8 @@ const styles = StyleSheet.create({
     rightPlaceholder: {
         width: 40, // To balance the header
     },
-    content: {
-        flex: 1,
+    scrollContainer: {
+        flexGrow: 1,
     },
     contentHeader: {
         flexDirection: 'row',

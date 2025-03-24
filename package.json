@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@supabase/supabase-js": "^2.49.1",
     "base64-arraybuffer": "^1.0.2",
@@ -20,9 +21,11 @@
     "expo-blur": "^14.0.3",
     "expo-camera": "~16.0.18",
     "expo-constants": "~17.0.8",
+    "expo-file-system": "^18.0.11",
     "expo-font": "^13.0.4",
     "expo-haptics": "^14.0.1",
     "expo-image": "^2.0.6",
+    "expo-image-manipulator": "^13.0.6",
     "expo-image-picker": "^16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-linking": "~7.0.5",
@@ -42,7 +45,8 @@
     "react-native-snap-carousel": "^3.9.1",
     "react-native-svg": "^15.8.0",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-video": "^6.10.2"
+    "react-native-video": "^6.10.2",
+    "stream-chat-expo": "^6.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

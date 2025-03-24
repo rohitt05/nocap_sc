@@ -92,4 +92,14 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         left: 10,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#111',
+    },
+    loadingText: {
+        color: 'white',
+        fontSize: 16,
+    }
 });

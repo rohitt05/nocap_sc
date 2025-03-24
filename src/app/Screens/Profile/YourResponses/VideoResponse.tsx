@@ -7,7 +7,10 @@ const VideoResponse = ({ response }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const videoRef = useRef(null);
 
-    const handlePlayPress = async () => {
+    const handlePlayPress = async (event) => {
+        // Stop event propagation to prevent parent TouchableOpacity from triggering
+        event.stopPropagation();
+
         if (videoRef.current) {
             const status = await videoRef.current.getStatusAsync();
 
@@ -35,23 +38,24 @@ const VideoResponse = ({ response }) => {
                 style={styles.videoPreview}
                 resizeMode="cover"
                 shouldPlay={false}
-                isLooping={false}
+                isLooping={true}
                 useNativeControls={false}
                 onPlaybackStatusUpdate={handleVideoEnd}
             />
-            <TouchableOpacity
-                style={styles.videoOverlay}
-                onPress={handlePlayPress}
-                activeOpacity={0.8}
-            >
-                <View style={styles.controlsContainer}>
+            {/* Remove the full-screen overlay and just use a button */}
+            <View style={styles.controlsContainer}>
+                <TouchableOpacity
+                    style={styles.playButton}
+                    onPress={handlePlayPress}
+                    activeOpacity={0.8}
+                >
                     {isPlaying ? (
-                        <FontAwesome name="pause" size={24} color="white" style={styles.playIcon} />
+                        <FontAwesome name="pause" size={24} color="white" />
                     ) : (
-                        <FontAwesome name="play" size={24} color="white" style={styles.playIcon} />
+                        <FontAwesome name="play" size={24} color="white" />
                     )}
-                </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
@@ -66,18 +70,17 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
-    videoOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-    },
     controlsContainer: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        padding: 16,
+        bottom: 10,
+        left: 10,
+        zIndex: 1,
     },
-    playIcon: {
-        opacity: 0.9,
+    playButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 });
 

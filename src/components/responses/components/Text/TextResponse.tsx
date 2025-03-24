@@ -4,71 +4,52 @@ import { ResponseItemProps } from '../../types';
 import { Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { styles } from './styles';
 import { Link } from 'expo-router';
+import ReactionPicker from '../ReactionPicker';
+import {
+    formatTimestamp,
+    estimateNeedsExpansion,
+    isValidUserId,
+    measureTextLines
+} from './TextResponseUtils';
 
+// Update the ResponseItemProps to include any necessary properties
+interface ExtendedResponseItemProps extends ResponseItemProps {
+    currentUserId: string; // Added to track the current user
+}
 
-const TextResponse: React.FC<ResponseItemProps> = ({ item }) => {
+const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
+    // Validate currentUserId early
+    const isUserAuthenticated = isValidUserId(currentUserId);
+
+    if (!isUserAuthenticated) {
+        console.log('TextResponse: No valid currentUserId provided', { currentUserId });
+    }
+
     // State to track if the content is expanded
     const [expanded, setExpanded] = useState(false);
     // State to track if content is long enough to need expansion
     const [needsExpansion, setNeedsExpansion] = useState(false);
+    // State to control reaction picker visibility
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
     // Ref for the text component to measure its height
     const textRef = useRef(null);
-
-    // Format timestamp in the desired format: "17 Mar · 3:24 PM"
-    const formatTimestamp = (timestamp) => {
-        const date = new Date(timestamp);
-        const day = date.getDate();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const month = monthNames[date.getMonth()];
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const formattedHours = hours % 12 || 12;
-        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-        return `${day} ${month} · ${formattedHours}:${formattedMinutes} ${ampm}`;
-    };
 
     // Function to check if content needs expansion button
     useEffect(() => {
         if (textRef.current) {
-            // Improved line counting logic
-            const charsPerLine = 40; // Adjusted based on font size and container width
-            const text = item.content || '';
-
-            // Count actual lines by looking for newlines
-            const newlineCount = (text.match(/\n/g) || []).length;
-
-            // Calculate approximate lines from text length
-            // Adjust this calculation based on your font size and container width
-            const textLength = text.length;
-            const estimatedLines = Math.ceil(textLength / charsPerLine);
-
-            // Use the greater of the two counts
-            const totalLines = Math.max(newlineCount + 1, estimatedLines);
-
-            // Only show expansion button if we have more than 3 lines
-            setNeedsExpansion(totalLines > 3);
+            // Use utility function to estimate if expansion is needed
+            setNeedsExpansion(estimateNeedsExpansion(item?.content));
         }
-    }, [item.content]);
+    }, [item?.content]);
 
     // For more accurate line counting after render
     useEffect(() => {
-        // This would be replaced with actual measurement in a real app
-        // Using onLayout or similar to get the actual number of lines
-        const measureTextLines = () => {
-            if (textRef.current && Platform && Platform.OS === 'ios') {
-                // On iOS, we could use the numberOfLines property
-                // This is pseudo-code and would need to be implemented properly
-                // textRef.current.measure((x, y, width, height) => {
-                //    const actualLines = Math.floor(height / lineHeight);
-                //    setNeedsExpansion(actualLines > 3);
-                // });
-            }
-        };
-
-        // Run with a small delay to ensure text has rendered
-        const timeout = setTimeout(measureTextLines, 100);
+        // Use utility function for text measurement
+        const timeout = setTimeout(() => {
+            measureTextLines(textRef, () => {
+                // Additional measurement logic if needed
+            });
+        }, 100);
         return () => clearTimeout(timeout);
     }, []);
 
@@ -77,6 +58,18 @@ const TextResponse: React.FC<ResponseItemProps> = ({ item }) => {
         setExpanded(!expanded);
     };
 
+    // Handle reaction selection from the picker
+    const handleReactionSelected = (reactionType: string) => {
+        // Just a simple callback - we don't need to refresh reactions anymore
+        console.log(`Reaction ${reactionType} was selected`);
+    };
+
+    // Check if we have necessary data
+    if (!item || !item.id || !item.user) {
+        console.warn('Missing required data in item prop', { itemExists: !!item, hasId: !!item?.id, hasUser: !!item?.user });
+        return null;
+    }
+
     return (
         <View style={[
             styles.responseItem,
@@ -84,7 +77,6 @@ const TextResponse: React.FC<ResponseItemProps> = ({ item }) => {
             expanded ? styles.expanded : (needsExpansion ? styles.defaultHeight : styles.compactHeight)
         ]}>
             <View style={styles.contentContainer}>
-
                 <View style={styles.header}>
                     <Link href={`/Screens/user/users?id=${item.user.id}`} asChild>
                         <TouchableOpacity>
@@ -102,7 +94,6 @@ const TextResponse: React.FC<ResponseItemProps> = ({ item }) => {
                         </Link>
                     </View>
                 </View>
-
 
                 {/* Header right section with timestamp and menu dots */}
                 <View style={styles.headerRight}>
@@ -147,21 +138,44 @@ const TextResponse: React.FC<ResponseItemProps> = ({ item }) => {
                     </TouchableOpacity>
                 )}
 
+                {/* Only render ReactionPicker if user is authenticated */}
+                {isUserAuthenticated && (
+                    <ReactionPicker
+                        responseId={item.id}
+                        userId={currentUserId}
+                        isVisible={showReactionPicker}
+                        onClose={() => setShowReactionPicker(false)}
+                        onReactionSelected={handleReactionSelected}
+                    />
+                )}
+
                 {/* Always render reaction container at the bottom right */}
                 <View style={styles.reactionsContainer}>
-                    {/* Feather icon */}
+                    {/* Reply icon */}
                     <Feather name="send" size={18} color="#fff" style={styles.sendIcon} />
-                    {/* Emoji icons */}
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-flirt" size={18} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-happy" size={18} color="#fff" />
-                    </TouchableOpacity>
+
+                    {/* Only show emoji button if user is authenticated */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionPicker && additionalStyles.activeButton]}
+                            onPress={() => setShowReactionPicker(prev => !prev)}
+                        >
+                            <Entypo name="emoji-happy" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </View>
     );
 };
+
+// Additional styles for new components
+const additionalStyles = StyleSheet.create({
+    activeButton: {
+        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+        borderWidth: 1,
+        borderColor: '#3498db',
+    }
+});
 
 export default TextResponse;

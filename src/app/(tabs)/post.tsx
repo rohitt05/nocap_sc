@@ -8,8 +8,15 @@ import PromptCard from '../../components/Post/PromptCard';
 import TabsComponent from '../../components/Post/TabsComponent';
 import InputComponent from '../../components/Post/InputComponent';
 import { fetchPromptOfTheDay } from '../../../API/fetchpromptoftheday';
+import { router, usePathname } from 'expo-router'; // Import from expo-router
+import CustomAlertModal from '../../components/CustomAlertModal'; // Import the custom alert component
 
 const Post = () => {
+    // State for alert modal
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
+
     // State for prompt data
     const [promptData, setPromptData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -26,6 +33,26 @@ const Post = () => {
 
     // Current user state
     const [currentUser, setCurrentUser] = useState(null);
+
+    // Get current pathname for screen focus detection
+    const pathname = usePathname();
+
+    // Function to reset component state
+    const resetState = () => {
+        setActiveTab('TEXT');
+        setInputText('');
+        setSelectedGif(null);
+        setVoiceRecording(null);
+        setMediaFile(null);
+    };
+
+    // Reset state when component unmounts and remounts
+    useEffect(() => {
+        return () => {
+            // This cleanup function will run when the component unmounts
+            resetState();
+        };
+    }, [pathname]);
 
     // Fetch user data
     useEffect(() => {
@@ -97,6 +124,13 @@ const Post = () => {
         }
     };
 
+    // Handle alert close and navigation
+    const handleAlertClose = () => {
+        setAlertVisible(false);
+        // Navigate to index (home) after the alert is closed
+        router.replace('/');
+    };
+
     // Function to handle posting content
     const handlePost = async () => {
         if (!currentUser) {
@@ -151,12 +185,13 @@ const Post = () => {
             if (error) throw error;
 
             // Clear inputs after successful posting
-            setInputText('');
-            setSelectedGif(null);
-            setVoiceRecording(null);
-            setMediaFile(null);
+            resetState();
 
-            Alert.alert('Success', 'Your response has been posted!');
+            // Show custom alert instead of Alert.alert
+            setAlertTitle('Success');
+            setAlertMessage('Your response has been posted!');
+            setAlertVisible(true);
+
         } catch (error) {
             console.error('Error posting response:', error);
             Alert.alert('Error', 'Failed to post your response. Please try again.');
@@ -165,12 +200,6 @@ const Post = () => {
         }
     };
 
-    // Upload GIF (just returns the URL since it's already hosted)
-    const uploadGif = async (gif) => {
-        return gif.url;
-    };
-
-    // Upload audio recording
     // Upload audio recording
     const uploadAudio = async (recording) => {
         if (!recording || !recording.uri) {
@@ -207,7 +236,6 @@ const Post = () => {
         }
     };
 
-    // Improved media upload function for images/videos
     // Improved media upload function for images/videos
     const uploadMedia = async (file) => {
         if (!file || !file.uri) {
@@ -257,8 +285,6 @@ const Post = () => {
         }
     };
 
-
-    // Rest of the component remains the same...
     if (loading) {
         return (
             <View style={[styles.container, styles.loadingContainer]}>
@@ -320,6 +346,14 @@ const Post = () => {
                     onTabChange={setActiveTab}
                 />
             </View>
+
+            {/* Custom Alert Modal */}
+            <CustomAlertModal
+                visible={alertVisible}
+                title={alertTitle}
+                message={alertMessage}
+                onClose={handleAlertClose}
+            />
         </View>
     );
 };

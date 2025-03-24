@@ -1,230 +1,54 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { Text } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons, Entypo, Feather, FontAwesome } from '@expo/vector-icons';
-import { fonts } from '../../../../utils/Fonts/fonts';
 import { ResponseItemProps } from '../../types';
 import { styles } from './styles';
 import { Link } from 'expo-router';
+import ReactionPicker from '../ReactionPicker';
+import {
+    formatTimestamp,
+    getDirectGiphyUrl,
+    useVideoPlayer
+} from './MediaUtils';
 
-const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
-    // State management
-    const [videoState, setVideoState] = useState({
-        playing: false,
-        uri: "",
-        error: null as string | null,
-        loaded: false
-    });
+// Update the ResponseItemProps to include necessary properties
+interface ExtendedResponseItemProps extends ResponseItemProps {
+    currentUserId?: string; // Added to track the current user
+}
 
-    const videoRef = useRef<Video>(null);
+const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
+    // State to control reaction picker visibility
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+    // Use the custom hook for video handling
     const mediaUrl = item.content;
+    const {
+        videoState,
+        videoRef,
+        togglePlayback,
+        onPlaybackStatusUpdate,
+        handleVideoError,
+        retryVideoLoad
+    } = useVideoPlayer(item.type === 'video' ? mediaUrl : '');
 
-    // Helper function to format timestamp
-    const formatTimestamp = (timestamp: string | number): string => {
-        const date = new Date(timestamp);
+    // Validate currentUserId early
+    const isUserAuthenticated = !!currentUserId && typeof currentUserId === 'string' && currentUserId.length > 0;
 
-        // Get day, month, hours and minutes
-        const day = date.getDate();
-        const month = date.toLocaleString('en-US', { month: 'short' });
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
+    if (!isUserAuthenticated) {
+        console.log('MediaResponse: No valid currentUserId provided', { currentUserId });
+    }
 
-        // Format hours for 12-hour clock
-        const formattedHours = hours % 12 || 12;
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        // Pad minutes with leading zero if needed
-        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-
-        // Return formatted string: "17 Mar · 5:30 PM"
-        return `${day} ${month} · ${formattedHours}:${formattedMinutes} ${ampm}`;
+    // Handle reaction selection from the picker
+    const handleReactionSelected = (reactionType: string) => {
+        // Just a simple callback
+        console.log(`Reaction ${reactionType} was selected for media response`);
     };
 
-    // Transform Giphy URLs to direct GIF URLs
-    const getDirectGiphyUrl = useCallback((url: string): string => {
-        const matches = url.match(/giphy\.com\/gifs\/[\w-]+-([a-zA-Z0-9]+)$/);
-        return matches && matches[1]
-            ? `https://media.giphy.com/media/${matches[1]}/giphy.gif`
-            : url;
-    }, []);
-
-    // Initialize video when component mounts
-    useEffect(() => {
-        if (item.type === 'video' && mediaUrl) {
-            console.log('Initializing video with media_url:', mediaUrl);
-            resolveVideoUri(mediaUrl);
-        }
-    }, [item, mediaUrl]);
-
-    // Resolve video URI based on path format
-    const resolveVideoUri = useCallback((uri: string): void => {
-        console.log('Resolving video URI:', uri);
-
-        // Handle different URI formats based on platform
-        let resolvedUri = uri;
-        if (uri.startsWith('/')) {
-            resolvedUri = Platform.OS === 'android'
-                ? `file://${uri}`
-                : `${FileSystem.documentDirectory}${uri.substring(1)}`;
-        }
-
-        setVideoState(prev => ({
-            ...prev,
-            uri: resolvedUri,
-            error: null,
-            loaded: false,
-            playing: false
-        }));
-
-        // Validate local file existence
-        if (resolvedUri.startsWith('file://') || resolvedUri.includes(FileSystem.documentDirectory)) {
-            validateFileExists(resolvedUri, uri);
-        }
-    }, []);
-
-    // Validate if file exists at the resolved path
-    const validateFileExists = useCallback((resolvedUri: string, originalUri: string): void => {
-        const filePath = resolvedUri.replace('file://', '');
-
-        FileSystem.getInfoAsync(filePath)
-            .then(info => {
-                if (!info.exists) {
-                    console.log('File does not exist, trying alternate formats');
-                    tryAlternateUriFormats(originalUri);
-                } else {
-                    console.log('File exists at path, proceeding with video');
-                }
-            })
-            .catch(error => {
-                console.log('Error checking file existence:', error);
-                tryAlternateUriFormats(originalUri);
-            });
-    }, []);
-
-    // Try different URI formats as fallbacks
-    const tryAlternateUriFormats = useCallback((originalUri: string): void => {
-        const alternateFormats = [
-            `asset://${originalUri.replace(/^\//, '')}`,
-            originalUri.replace(/^file:\/\//, ''),
-            `content://media${originalUri}`,
-            Platform.OS === 'ios' ? `asset:/${originalUri}` : null,
-            `${FileSystem.cacheDirectory}${originalUri.replace(/^\//, '')}`,
-            !originalUri.includes('://') && !originalUri.startsWith('/') ? `https://${originalUri}` : null,
-            originalUri // Original as last resort
-        ].filter(Boolean) as string[];
-
-        console.log('Trying alternate URI formats:', alternateFormats);
-        loadVideoWithFallbacks(alternateFormats, 0);
-    }, []);
-
-    // Attempt to load video with fallback URIs
-    const loadVideoWithFallbacks = useCallback((uriList: string[], index: number): void => {
-        if (index >= uriList.length) {
-            console.log('All URI formats failed');
-            setVideoState(prev => ({
-                ...prev,
-                error: "Could not load video with any URI format"
-            }));
-            return;
-        }
-
-        console.log(`Trying URI at index ${index}:`, uriList[index]);
-        setVideoState(prev => ({
-            ...prev,
-            uri: uriList[index],
-            error: null
-        }));
-    }, []);
-
-    // Toggle video playback
-    const toggleVideoPlayback = useCallback(async (): Promise<void> => {
-        if (!videoRef.current) {
-            console.log('Video reference is null');
-            return;
-        }
-
-        try {
-            if (!videoState.playing) {
-                try {
-                    const playResult = await videoRef.current.playAsync();
-                    console.log('Play result:', playResult);
-                    setVideoState(prev => ({ ...prev, playing: true }));
-                } catch (playError) {
-                    console.log('Direct play failed, attempting reload approach:', playError);
-
-                    // Full reload approach
-                    await videoRef.current.unloadAsync().catch(e => console.log('Unload error:', e));
-                    await videoRef.current.loadAsync(
-                        { uri: videoState.uri },
-                        { shouldPlay: true, positionMillis: 0 },
-                        false
-                    );
-
-                    setVideoState(prev => ({ ...prev, playing: true }));
-                }
-            } else {
-                await videoRef.current.pauseAsync();
-                setVideoState(prev => ({ ...prev, playing: false }));
-            }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error playing video";
-            console.error('VIDEO PLAYBACK ERROR:', errorMessage);
-
-            setVideoState(prev => ({ ...prev, error: errorMessage }));
-        }
-    }, [videoState.playing, videoState.uri]);
-
-    // Handle video status updates
-    const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus): void => {
-        if (!status.isLoaded) {
-            setVideoState(prev => ({
-                ...prev,
-                error: status.error || "Video failed to load",
-                loaded: false
-            }));
-            return;
-        }
-
-        // Update load and play states
-        setVideoState(prev => ({
-            ...prev,
-            loaded: true,
-            error: null,
-            playing: status.isPlaying
-        }));
-
-        // Handle video completion
-        if (status.didJustFinish) {
-            console.log('Video playback finished');
-            setVideoState(prev => ({ ...prev, playing: false }));
-            videoRef.current?.setPositionAsync(0);
-        }
-    }, []);
-
-    // Handle video loading errors
-    const handleVideoError = useCallback((error: string): void => {
-        console.log('Video error:', error);
-        setVideoState(prev => ({ ...prev, error: `Error: ${error}` }));
-
-        // Try alternate URIs if initial load fails
-        if (videoState.uri === mediaUrl ||
-            videoState.uri === `file://${mediaUrl}` ||
-            videoState.uri.includes(FileSystem.documentDirectory)) {
-            console.log('Initial URI failed, trying alternates');
-            tryAlternateUriFormats(mediaUrl || "");
-        }
-    }, [mediaUrl, tryAlternateUriFormats, videoState.uri]);
-
-    // Retry loading video after error
-    const retryVideoLoad = useCallback((): void => {
-        resolveVideoUri(mediaUrl || "");
-    }, [mediaUrl, resolveVideoUri]);
-
     // Render appropriate media based on item type
-    const renderMedia = useCallback(() => {
+    const renderMedia = () => {
         if (!mediaUrl) return null;
 
         switch (item.type) {
@@ -264,7 +88,7 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
                             onError={handleVideoError}
                             onLoad={(status) => {
                                 if (status.isLoaded) {
-                                    setVideoState(prev => ({ ...prev, loaded: true, error: null }));
+                                    console.log('Video loaded successfully');
                                 }
                             }}
                             posterSource={{ uri: mediaUrl }}
@@ -293,15 +117,7 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
             default:
                 return null;
         }
-    }, [
-        item.type,
-        mediaUrl,
-        getDirectGiphyUrl,
-        videoState,
-        onPlaybackStatusUpdate,
-        handleVideoError,
-        retryVideoLoad
-    ]);
+    };
 
     return (
         <View style={styles.mediaResponseItem}>
@@ -314,7 +130,6 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
             <View style={styles.gradientOverlay} />
 
             {/* Header overlay */}
-
             <View style={styles.overlayHeader}>
                 <Link href={`/Screens/user/users?id=${item.user.id}`} asChild>
                     <TouchableOpacity>
@@ -343,18 +158,34 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
                 </TouchableOpacity>
             </View>
 
+            {/* Only render ReactionPicker if user is authenticated */}
+            {isUserAuthenticated && (
+                <ReactionPicker
+                    responseId={item.id}
+                    userId={currentUserId}
+                    isVisible={showReactionPicker}
+                    onClose={() => setShowReactionPicker(false)}
+                    onReactionSelected={handleReactionSelected}
+                />
+            )}
+
             {/* Bottom bar with reactions */}
             <View style={styles.bottomBar}>
-                <View style={styles.reactionsGroup}>
-                    <TouchableOpacity style={styles.actionButton}>
+                <View style={styles.reactionsContainer}>
+                    {/* Send button */}
+                    <TouchableOpacity style={styles.sendButton}>
                         <Feather name="send" size={18} color="#fff" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-flirt" size={18} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.reactionButton}>
-                        <Entypo name="emoji-happy" size={18} color="#fff" />
-                    </TouchableOpacity>
+
+                    {/* Only show emoji button if user is authenticated */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionPicker && additionalStyles.activeButton]}
+                            onPress={() => setShowReactionPicker(prev => !prev)}
+                        >
+                            <Entypo name="emoji-happy" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
 
@@ -362,7 +193,7 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
             {item.type === 'video' && (
                 <TouchableOpacity
                     style={styles.debugButton}
-                    onPress={toggleVideoPlayback}
+                    onPress={togglePlayback}
                 >
                     <FontAwesome
                         name={videoState.playing ? "pause" : "play"}
@@ -375,6 +206,13 @@ const MediaResponse: React.FC<ResponseItemProps> = ({ item }) => {
     );
 };
 
-
+// Additional styles for new components
+const additionalStyles = StyleSheet.create({
+    activeButton: {
+        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+        borderWidth: 1,
+        borderColor: '#3498db',
+    }
+});
 
 export default MediaResponse;

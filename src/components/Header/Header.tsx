@@ -1,15 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, StyleSheet, Text, Animated, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import promptsData from "../../../assets/prompt/prompt.json";
-import userData from '../../../assets/userProfile/userData.json';
-
+import { fetchAuthUser } from '../../../API/fetchauthuser'; // Updated import path
+import { fetchPromptOfTheDay } from '../../../API/fetchpromptoftheday';
 
 export const HomeHeader = ({
     scrollY = new Animated.Value(0),
     scrollThreshold = 200 // Default value, will be updated dynamically
 }) => {
+    const [promptText, setPromptText] = useState('Today\'s Prompt');
+    const [userData, setUserData] = useState(null);
+
+    // Fetch the authenticated user when component mounts
+    useEffect(() => {
+        const getUserData = async () => {
+            try {
+                const authUser = await fetchAuthUser();
+                setUserData(authUser);
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        getUserData();
+    }, []);
+
+    // Fetch the prompt when component mounts
+    useEffect(() => {
+        const getPrompt = async () => {
+            try {
+                const promptData = await fetchPromptOfTheDay();
+                if (promptData && promptData.prompt) {
+                    setPromptText(promptData.prompt.text);
+                }
+            } catch (error) {
+                console.error('Error fetching prompt:', error);
+                setPromptText('Error loading prompt');
+            }
+        };
+
+        getPrompt();
+    }, []);
+
     // Calculate opacity based on scroll position with dynamically determined threshold
     const headerOpacity = scrollY.interpolate({
         inputRange: [scrollThreshold - 50, scrollThreshold],
@@ -24,7 +57,7 @@ export const HomeHeader = ({
     });
 
     // Check if user has a profile picture
-    const hasProfilePicture = userData && userData.profilePicture && userData.profilePicture.trim() !== '';
+    const hasProfilePicture = userData && userData.avatar_url && userData.avatar_url.trim() !== '';
 
     return (
         <View style={styles.headerContainer}>
@@ -38,7 +71,7 @@ export const HomeHeader = ({
                 <Link href="/Screens/Profile/profile" style={[styles.profileIcon, { zIndex: 10 }]}>
                     {hasProfilePicture ? (
                         <Image
-                            source={{ uri: userData.profilePicture }}
+                            source={{ uri: userData.avatar_url }}
                             style={styles.profileImage}
                         />
                     ) : (
@@ -56,7 +89,7 @@ export const HomeHeader = ({
                 pointerEvents="none" // This ensures it doesn't block touch events
             >
                 <Text style={styles.promptHeaderText} numberOfLines={1} ellipsizeMode="tail">
-                    {promptsData.text}
+                    {promptText}
                 </Text>
             </Animated.View>
         </View>

@@ -5,24 +5,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const AudioResponse = ({ response, isPlaying, onPlayPress, id, playingId }) => {
     return (
-        <TouchableOpacity
-            style={styles.mediaPreviewContainer}
-            onPress={() => onPlayPress(response, id)}
-        >
+        <View style={styles.mediaPreviewContainer}>
             <LinearGradient
                 colors={['#87CEFA', '#1E90FF', '#0000CD', '#000033']}
                 style={styles.gradient}
                 locations={[0, 0.3, 0.7, 1]}
             >
                 <View style={styles.controlsContainer}>
-                    {isPlaying && playingId === id ? (
-                        <FontAwesome name="pause" size={24} color="white" style={styles.previewIcon} />
-                    ) : (
-                        <FontAwesome name="play" size={24} color="white" style={styles.previewIcon} />
-                    )}
+                    <TouchableOpacity
+                        onPress={() => onPlayPress(response, id)}
+                        style={styles.iconButton}
+                    >
+                        {isPlaying && playingId === id ? (
+                            <FontAwesome name="pause" size={24} color="white" style={styles.previewIcon} />
+                        ) : (
+                            <FontAwesome name="play" size={24} color="white" style={styles.previewIcon} />
+                        )}
+                    </TouchableOpacity>
                 </View>
             </LinearGradient>
-        </TouchableOpacity>
+        </View>
     );
 };
 
@@ -41,6 +43,11 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         padding: 16,
+    },
+    iconButton: {
+        padding: 10, // Increases tap target size
+        marginLeft: -10, // Compensates for padding to keep icon in same position
+        marginBottom: -10,
     },
     previewIcon: {
         opacity: 0.9,
