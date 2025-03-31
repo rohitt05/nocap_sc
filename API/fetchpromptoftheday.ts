@@ -14,7 +14,12 @@ interface StoredPromptData {
     selectedAt: string;
 }
 
+interface UsedPromptsData {
+    usedPromptIds: string[];
+}
+
 const STORAGE_KEY = 'DAILY_PROMPT_DATA';
+const USED_PROMPTS_KEY = 'PERMANENTLY_USED_PROMPT_IDS';
 
 export async function fetchPromptOfTheDay() {
     try {
@@ -65,18 +70,50 @@ async function storePromptData(data: StoredPromptData): Promise<void> {
     }
 }
 
+async function getPermanentlyUsedPromptIds(): Promise<string[]> {
+    try {
+        const jsonValue = await AsyncStorage.getItem(USED_PROMPTS_KEY);
+        const usedPrompts: UsedPromptsData = jsonValue
+            ? JSON.parse(jsonValue)
+            : { usedPromptIds: [] };
+        return usedPrompts.usedPromptIds;
+    } catch (error) {
+        console.error('Error reading used prompt IDs:', error);
+        return [];
+    }
+}
+
+async function storePermanentlyUsedPromptId(promptId: string): Promise<void> {
+    try {
+        const usedPromptIds = await getPermanentlyUsedPromptIds();
+
+        // Add new ID, ensuring no duplicates
+        const updatedUsedPromptIds = [...new Set([...usedPromptIds, promptId])];
+
+        const jsonValue = JSON.stringify({ usedPromptIds: updatedUsedPromptIds });
+        await AsyncStorage.setItem(USED_PROMPTS_KEY, jsonValue);
+    } catch (error) {
+        console.error('Error storing used prompt ID:', error);
+    }
+}
+
 async function selectNewPrompt() {
-    // Get active prompts
+    // Get permanently used prompt IDs
+    const usedPromptIds = await getPermanentlyUsedPromptIds();
+
+    // Get active prompts, excluding permanently used ones
     const { data, error } = await supabase
         .from('prompts')
         .select('*')
         .eq('active', true)
+        .not('id', 'in', `(${usedPromptIds.join(',')})`)
         .limit(50);
 
     if (error) throw error;
 
     if (!data || data.length === 0) {
-        throw new Error('No active prompts found');
+        // If all prompts have been used
+        throw new Error('All available prompts have been used');
     }
 
     // Select a random prompt
@@ -95,7 +132,11 @@ async function selectNewPrompt() {
         selectedAt: now.toISOString()
     };
 
-    await storePromptData(promptData);
+    // Store the prompt and mark it as permanently used
+    await Promise.all([
+        storePromptData(promptData),
+        storePermanentlyUsedPromptId(randomPrompt.id)
+    ]);
 
     const timeRemaining = calculateTimeRemaining(expiryTime);
 

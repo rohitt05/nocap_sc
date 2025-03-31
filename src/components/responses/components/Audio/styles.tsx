@@ -6,10 +6,11 @@ export const styles = StyleSheet.create({
         marginBottom: 15,
     },
     contentContainer: {
-        borderRadius: 12,
+        borderRadius: 24,
         padding: 15,
         position: 'relative',
-        height: 200, // Increased height of container
+        width: '100%',
+        height: 300,
         justifyContent: 'space-between', // This helps position elements at top and bottom
     },
     header: {

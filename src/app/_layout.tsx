@@ -3,7 +3,7 @@ import { Slot, Stack } from "expo-router";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, StyleSheet } from "react-native";
 import { supabase } from "../../lib/supabase";
-import Auth from "../components/Auth";
+import Auth from "./AuthComponent/Auth";
 
 export default function RootLayout() {
     const [session, setSession] = useState(null);

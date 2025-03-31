@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
         height: '90%',
     },
     modalView: {
-        backgroundColor: '#000',
+        backgroundColor: '#111',
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         height: '100%',

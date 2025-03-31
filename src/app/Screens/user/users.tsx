@@ -1,35 +1,53 @@
-import { View, Text, Image, StatusBar, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+    View,
+    Text,
+    Image,
+    StatusBar,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    Alert
+} from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useLocalSearchParams, router } from 'expo-router';
-import YourResponses from '../Profile/YourResponses'; // Adjust path as needed
-import { styles } from '../Profile/styles'; // Adjust path as needed
-import { useFetchFriends } from '../../../../API/fetchFriends'; // Adjust path as needed
-import { useFriendRequests } from '../../../../API/useFriendRequests'; // Import the hook
-import { useUserProfile } from './hook/useUserProfile'; // Import the user profile hook
-import { useFriendshipStatus } from './hook/useFriendshipStatus'; // Import the friendship hook
 
-const LoadingView = () => (
-    <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#ffffff" />
-    </View>
-);
+// Import hooks and components
+import YourResponses from '../Profile/YourResponses';
+import { styles } from '../Profile/styles';
+import { useFetchFriends } from '../../../../API/fetchFriends';
+import { useFriendRequests } from '../../../../API/useFriendRequests';
+import { useUserProfile } from './hook/useUserProfile';
+import { useFriendshipStatus } from './hook/useFriendshipStatus';
+import CurseButton from '../../../components/CurseButton';
+import UserActionsModal from './UserActionsModal';
+import { supabase } from '../../../../lib/supabase';
 
-const ErrorView = () => (
-    <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: 'white' }}>User not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
-            <Text style={{ color: '#3498db' }}>Go Back</Text>
-        </TouchableOpacity>
-    </View>
-);
+import { UserInfo, useUserInfo } from './hook/useUserInfo';
 
 export default function UserProfile() {
     const { id } = useLocalSearchParams();
-    const { userData, loading: userLoading, isOwner } = useUserProfile(id as string);
-    const { friends, loading: friendsLoading } = useFetchFriends();
-    const { friendRequests, refreshFriendRequests } = useFriendRequests();
+    const {
+        userData,
+        loading: userLoading,
+        isOwner
+    } = useUserProfile(id as string);
+
+    // Add this - Get user info including the join date
+    const { userInfo, joinDate, loading: userInfoLoading } = useUserInfo(id as string);
+
+    const {
+        friends,
+        loading: friendsLoading,
+        removeFriend
+    } = useFetchFriends();
+
+    const {
+        friendRequests,
+        refreshFriendRequests
+    } = useFriendRequests();
+
     const {
         isFriend,
         requestPending,
@@ -38,17 +56,25 @@ export default function UserProfile() {
         acceptFriendRequest
     } = useFriendshipStatus(userData?.id || null, friends);
 
-    // Handle navigation back
+    const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
+
+    // Memoized unfriend handler
+    const handleUnfriend = useCallback(async () => {
+        if (userData?.id) {
+            try {
+                await removeFriend(userData.id);
+                refreshFriendRequests();
+            } catch (error) {
+                console.error('Failed to unfriend:', error);
+                Alert.alert('Error', 'Failed to remove friend');
+            }
+        }
+    }, [userData, removeFriend, refreshFriendRequests]);
+
+    // Memoized go back handler
     const handleGoBack = useCallback(() => {
         router.back();
     }, []);
-
-    // Handle message navigation
-    const navigateToMessages = useCallback(() => {
-        if (userData?.id) {
-            router.push(`/messages/${userData.id}`);
-        }
-    }, [userData?.id]);
 
     // Memoize friend button props to avoid unnecessary re-renders
     const friendButtonProps = useMemo(() => {
@@ -85,13 +111,24 @@ export default function UserProfile() {
     }, [receivedRequest, requestPending, acceptFriendRequest, sendFriendRequest]);
 
     // Show loading indicator while data is being fetched
-    if (userLoading || friendsLoading) {
-        return <LoadingView />;
+    if (userLoading || friendsLoading || userInfoLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#ffffff" />
+            </View>
+        );
     }
 
     // Handle case where user data couldn't be loaded
     if (!userData) {
-        return <ErrorView />;
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: 'white' }}>User not found</Text>
+                <TouchableOpacity onPress={handleGoBack} style={{ marginTop: 20 }}>
+                    <Text style={{ color: '#3498db' }}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
     }
 
     return (
@@ -126,12 +163,19 @@ export default function UserProfile() {
                         </TouchableOpacity>
                     </Link>
                 ) : (
-                    // Empty view to maintain layout
-                    <View style={{ width: 24 }} />
+                    <TouchableOpacity
+                        style={styles.menuButton}
+                        onPress={() => setIsActionsModalVisible(true)}
+                        accessibilityLabel="User actions menu"
+                        accessibilityRole="button"
+                    >
+                        <View style={styles.menuButtonContainer}>
+                            <Ionicons name="ellipsis-vertical" size={24} color="white" />
+                        </View>
+                    </TouchableOpacity>
                 )}
             </View>
 
-            {/* ScrollView for main content */}
             <ScrollView
                 style={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
@@ -145,11 +189,9 @@ export default function UserProfile() {
                         resizeMode="cover"
                         accessible={true}
                         accessibilityLabel={`${userData.username}'s profile picture`}
-                        // Add default image if loading fails
                         defaultSource={require('../../../../assets/hattori.webp')}
                     />
 
-                    {/* Username container with gradient overlay at the bottom */}
                     <LinearGradient
                         colors={['transparent', 'rgba(0,0,0,0.9)']}
                         style={styles.usernameContainer}>
@@ -188,31 +230,16 @@ export default function UserProfile() {
                     </LinearGradient>
                 </View>
 
-                {/* Message Button - only display if not the profile owner AND is a friend */}
+                {/* Conditionally render Message Button ONLY if NOT owner AND IS a friend */}
                 {!isOwner && isFriend && (
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#fff',
-                            padding: 15,
-                            borderRadius: 20,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginVertical: 20,
-                            marginHorizontal: 16,
-                            width: '90%',
-                            alignSelf: 'center',
-                        }}
-                        onPress={navigateToMessages}
-                        accessibilityLabel="Message this user"
-                        accessibilityRole="button"
-                    >
-                        <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 16 }}>
-                            Message
-                        </Text>
-                    </TouchableOpacity>
+                    <CurseButton
+                        receiverId={userData.id}
+                        username={userData.username}
+                        isFriend={true}
+                    />
                 )}
 
-                {/* Add/Accept Friend or Pending Button - only display if not the profile owner AND not a friend */}
+                {/* Conditionally render Add/Accept Friend button ONLY if NOT owner AND NOT a friend */}
                 {!isOwner && !isFriend && (
                     <TouchableOpacity
                         style={friendButtonProps.buttonStyle}
@@ -251,9 +278,21 @@ export default function UserProfile() {
                     <View style={{ marginTop: -10 }}>
                         <YourResponses userId={userData.id} />
                     </View>
-
                 )}
             </ScrollView>
+
+            {/* User Actions Modal - only render for non-owner users */}
+            {!isOwner && userData && (
+                <UserActionsModal
+                    isVisible={isActionsModalVisible}
+                    onClose={() => setIsActionsModalVisible(false)}
+                    userId={userData.id}
+                    username={userData.username}
+                    onUnfriend={handleUnfriend}
+                    isFriend={isFriend}
+                    joinDate={joinDate}
+                />
+            )}
         </View>
     );
 }

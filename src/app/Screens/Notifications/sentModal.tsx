@@ -21,6 +21,7 @@ const { height } = Dimensions.get('window');
 const MODAL_HEIGHT = height * 0.8;
 const SNAP_THRESHOLD = 0.3;
 
+
 // Memo-ized request item component
 const RequestItem = memo(({ request, onCancel, isProcessing }) => {
     // Format timestamp to relative time
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     bottomSheet: {
-        backgroundColor: '#000',
+        backgroundColor: '#111',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         height: MODAL_HEIGHT,

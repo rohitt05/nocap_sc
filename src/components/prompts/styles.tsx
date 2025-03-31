@@ -29,40 +29,44 @@ export const styles = StyleSheet.create({
         paddingTop: 10,
     },
     greetingText: {
-        fontSize: 14,
-        fontFamily: fonts.light,
-        color: '#a8b1c2',
+        fontSize: 13,
+        fontFamily: fonts.medium,
+        color: 'gray',
         marginBottom: 5,
     },
     promptTitle: {
         fontSize: 24,
-        fontFamily: fonts.semiBoldItalic,
+        fontFamily: fonts.black,
         color: '#fff',
     },
     promptCard: {
         backgroundColor: '#132fba',
         borderRadius: 20,
-        minHeight: 200, // Reduced height as content was removed
+        minHeight: 200,
         display: 'flex',
         flexDirection: 'column',
+        shadowColor: '#3b56d9',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 10,
+        position: 'relative',
+        overflow: 'hidden',
     },
     promptContainer: {
         flex: 1,
-        paddingHorizontal: 15,
+        paddingHorizontal: 18,
         justifyContent: 'center',
-        paddingTop: 20, // Added top padding since the header was removed
+        paddingTop: 24,
     },
     promptTextBorder: {
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.4)',
         borderRadius: 12,
         padding: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     promptText: {
         fontSize: 22,
         lineHeight: 30,
-        fontFamily: fonts.semiBold,
+        fontFamily: fonts.semiBoldItalic,
         color: '#fff',
     },
     footer: {
@@ -83,11 +87,12 @@ export const styles = StyleSheet.create({
     },
     // Progress bar styles
     progressContainer: {
+        top: -5,
         bottom: 5,
         paddingHorizontal: 10,
     },
     progressBarBackground: {
-        height: 4,
+        height: 5,
         overflow: 'hidden',
     },
     progressBarFill: {

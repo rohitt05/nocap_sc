@@ -5,6 +5,10 @@ import { Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { styles } from './styles';
 import { Link } from 'expo-router';
 import ReactionPicker from '../ReactionPicker';
+import ReactionTexts from '../ReactionText/ReactionTexts'; // Import ReactionTexts
+import ShareModal from '../../../SharePostModal'; // Import the ShareModal component
+
+
 import {
     formatTimestamp,
     estimateNeedsExpansion,
@@ -31,6 +35,11 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
     const [needsExpansion, setNeedsExpansion] = useState(false);
     // State to control reaction picker visibility
     const [showReactionPicker, setShowReactionPicker] = useState(false);
+    // State to control reaction texts visibility
+    const [showReactionTexts, setShowReactionTexts] = useState(false);
+    // state to control share modal visibility
+    const [showShareModal, setShowShareModal] = useState(false); // Add state for ShareModal
+
     // Ref for the text component to measure its height
     const textRef = useRef(null);
 
@@ -62,6 +71,10 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
     const handleReactionSelected = (reactionType: string) => {
         // Just a simple callback - we don't need to refresh reactions anymore
         console.log(`Reaction ${reactionType} was selected`);
+    };
+
+    const handleReactionTextSelected = (reactionType: string) => {
+        console.log(`Reaction text ${reactionType} was selected for audio response`);
     };
 
     // Check if we have necessary data
@@ -98,7 +111,9 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                 {/* Header right section with timestamp and menu dots */}
                 <View style={styles.headerRight}>
                     <Text style={styles.timestamp}>{formatTimestamp(item.timestamp)}</Text>
-                    <TouchableOpacity style={styles.menuDotsContainer}>
+                    <TouchableOpacity
+                        style={styles.menuDotsContainer}
+                        onPress={() => setShowShareModal(true)} >
                         <Entypo name="dots-two-vertical" size={16} color="#fff" style={styles.menuDots} />
                     </TouchableOpacity>
                 </View>
@@ -138,6 +153,25 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                     </TouchableOpacity>
                 )}
 
+                {/* ShareModal component */}
+                <ShareModal
+                    isVisible={showShareModal}
+                    onClose={() => setShowShareModal(false)}
+                    postId={item.id}
+                    postType={item.type}
+                />
+
+                {/* ReactionTexts */}
+                {isUserAuthenticated && (
+                    <ReactionTexts
+                        responseId={item.id}
+                        userId={currentUserId}
+                        isVisible={showReactionTexts}
+                        onClose={() => setShowReactionTexts(false)}
+                        onReactionSelected={handleReactionTextSelected}
+                    />
+                )}
+
                 {/* Only render ReactionPicker if user is authenticated */}
                 {isUserAuthenticated && (
                     <ReactionPicker
@@ -152,7 +186,18 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                 {/* Always render reaction container at the bottom right */}
                 <View style={styles.reactionsContainer}>
                     {/* Reply icon */}
-                    <Feather name="send" size={18} color="#fff" style={styles.sendIcon} />
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionTexts && additionalStyles.activeButton]}
+                            onPress={() => {
+                                setShowReactionTexts(prev => !prev);
+                                setShowReactionPicker(false); // Close emoji picker if open
+                            }}
+                        >
+                            <Feather name="type" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
+
 
                     {/* Only show emoji button if user is authenticated */}
                     {isUserAuthenticated && (

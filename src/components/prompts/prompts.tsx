@@ -170,7 +170,7 @@ const PromptOfTheDay = () => {
 
                     <View style={styles.footer}>
                         <Text style={styles.tapToAnswerText}>"tap to answer"</Text>
-                        <Text style={styles.promptTime}>{promptData?.time || "00:00:00"}</Text>
+                        {/* <Text style={styles.promptTime}>{promptData?.time || "00:00:00"}</Text> */}
                     </View>
                 </TouchableOpacity>
             </Link>

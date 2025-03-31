@@ -1,7 +1,6 @@
-import { View, Text, TouchableOpacity, StatusBar, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, SafeAreaView, ScrollView, Alert, Image } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Ionicons, MaterialIcons, Feather, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
-import userData from '../../../../assets/userProfile/userData.json';
 import { Link, useRouter } from 'expo-router';
 import { handleShareNoCap } from '../../../utils/ShareUtils';
 import timeZoneState from '../../../utils/TimeUntils'; // Adjust path as needed
@@ -13,6 +12,49 @@ const SettingsScreen = () => {
     const [currentTimeZone] = timeZoneState.useTimeZone();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    // New state for user data
+    const [userData, setUserData] = useState({
+        full_name: '',
+        username: '',
+        avatar_url: null
+    });
+
+    // Fetch user data on component mount
+    useEffect(() => {
+        fetchUserProfile();
+    }, []);
+
+    const fetchUserProfile = async () => {
+        try {
+            // Get the current authenticated user
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                // Redirect to login if no user is authenticated
+                router.replace('/auth/login');
+                return;
+            }
+
+            // Fetch user profile from users table
+            const { data, error } = await supabase
+                .from('users')
+                .select('full_name, username, avatar_url')
+                .eq('id', user.id)
+                .single();
+
+            if (error) throw error;
+
+            setUserData({
+                full_name: data.full_name || 'User',
+                username: data.username || `user_${user.id.slice(0, 8)}`,
+                avatar_url: data.avatar_url
+            });
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            Alert.alert('Error', 'Could not fetch user profile');
+        }
+    };
 
     // Sign out function
     const handleSignOut = async () => {
@@ -70,14 +112,21 @@ const SettingsScreen = () => {
             <ScrollView style={styles.scrollView}>
                 {/* Profile Section */}
                 <TouchableOpacity style={styles.profileCard}>
-                    <View style={styles.profileIconContainer}>
-                        <Text style={styles.profileIconText}>
-                            {userData.name ? userData.name.charAt(0).toUpperCase() : 'M'}
-                        </Text>
-                    </View>
+                    {userData.avatar_url ? (
+                        <Image
+                            source={{ uri: userData.avatar_url }}
+                            style={styles.profileIconContainer}
+                        />
+                    ) : (
+                        <View style={styles.profileIconContainer}>
+                            <Text style={styles.profileIconText}>
+                                {userData.full_name ? userData.full_name.charAt(0).toUpperCase() : 'U'}
+                            </Text>
+                        </View>
+                    )}
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{userData.name || 'Rohit'}</Text>
-                        <Text style={styles.profileUsername}>{userData.username || 'mainninjahathori'}</Text>
+                        <Text style={styles.profileName}>{userData.full_name}</Text>
+                        <Text style={styles.profileUsername}>@{userData.username}</Text>
                     </View>
                 </TouchableOpacity>
 

@@ -93,7 +93,7 @@ const Profile = () => {
                 <Link href="Screens/SettingsScreen/SettingsScreen" style={{ zIndex: 10 }}>
                     <TouchableOpacity style={styles.menuButton}>
                         <View style={styles.menuButtonContainer}>
-                            <Ionicons name="ellipsis-vertical" size={24} color="white" />
+                            <Ionicons name="menu" size={24} color="white" />
                         </View>
                     </TouchableOpacity>
                 </Link>

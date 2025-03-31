@@ -288,7 +288,7 @@ const Post = () => {
     if (loading) {
         return (
             <View style={[styles.container, styles.loadingContainer]}>
-                <ActivityIndicator size="large" color="#6441A5" />
+                <ActivityIndicator size="large" color="#132fba" />
                 <Text style={styles.loadingText}>Loading prompt...</Text>
             </View>
         );
@@ -297,10 +297,11 @@ const Post = () => {
     return (
         <View style={styles.container}>
             {/* Navbar */}
+            {/* Navbar */}
             <View style={styles.navbar}>
-                <View style={styles.navSide} />
-                <Text style={styles.logoText}>NoCap</Text>
-                <View style={styles.navSide}>
+                <View style={[styles.navSide, styles.leftSide]} />
+                <Text style={styles.logoText}>no cap.</Text>
+                <View style={[styles.navSide, styles.rightSide]}>
                     <TouchableOpacity
                         style={[
                             styles.postButton,
@@ -312,7 +313,7 @@ const Post = () => {
                         {submitting ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                            <Text style={styles.postButtonText}>Post</Text>
+                            <Text style={styles.postButtonText}>Drop it</Text>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -321,7 +322,7 @@ const Post = () => {
             {/* Post Content */}
             <View style={styles.content}>
                 {/* Timer Component */}
-                <Timer promptDate={promptData.date} promptTime={promptData.time} expiresAt={promptData.expiresAt} />
+                {/* <Timer promptSDate={promptData.date} promptTime={promptData.time} expiresAt={promptData.expiresAt} /> */}
 
                 {/* Prompt Card Component */}
                 <PromptCard
@@ -376,26 +377,33 @@ const styles = StyleSheet.create({
         backgroundColor: 'black',
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center', // Changed to center
         paddingTop: 10,
         paddingHorizontal: 15,
+        position: 'relative', // Add relative positioning
     },
     navSide: {
-        width: 60,
-        alignItems: 'flex-end',
+        position: 'absolute', // Position nav sides absolutely
+        top: 10,
+    },
+    leftSide: {
+        left: 15,
+    },
+    rightSide: {
+        right: 15,
     },
     logoText: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#fff',
         letterSpacing: 0.5,
+        textAlign: 'center', // Ensure text is centered
     },
     postButton: {
         paddingVertical: 6,
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         borderRadius: 25,
-        backgroundColor: '#6441A5',
-        minWidth: 60,
+        backgroundColor: '#132fba',
         alignItems: 'center',
     },
     disabledButton: {
@@ -411,5 +419,4 @@ const styles = StyleSheet.create({
         padding: 16,
     },
 });
-
 export default Post;

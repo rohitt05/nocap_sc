@@ -1,40 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { fonts } from '../../../utils/Fonts/fonts'; // Update this path as needed
+import { fonts } from '../../../utils/Fonts/fonts';
 
 const Timer = ({ promptDate, promptTime, expiresAt }) => {
-    const [timeRemaining, setTimeRemaining] = useState(promptTime);
-    const [percentRemaining, setPercentRemaining] = useState(100);
+    const [timeDisplay, setTimeDisplay] = useState('');
+    const [isLate, setIsLate] = useState(false);
 
-    // Calculate and update time remaining
     useEffect(() => {
-        if (!expiresAt) return;
+        if (!promptDate) return;
 
-        const expiryTime = new Date(expiresAt);
+        const selectedTime = new Date(promptDate);
+        const postingDeadline = new Date(selectedTime.getTime() + (30 * 60 * 1000)); // 30 minutes window
 
         const updateTime = () => {
             const now = new Date();
-            const diffMs = expiryTime.getTime() - now.getTime();
 
-            if (diffMs <= 0) {
-                setTimeRemaining("00:00:00");
-                setPercentRemaining(0);
-                return;
+            if (now > postingDeadline) {
+                // Late period
+                setIsLate(true);
+
+                const lateDiffMs = now.getTime() - postingDeadline.getTime();
+                const lateHours = Math.floor(lateDiffMs / (60 * 60 * 1000));
+                const lateMinutes = Math.floor((lateDiffMs % (60 * 60 * 1000)) / (60 * 1000));
+                const lateSeconds = Math.floor((lateDiffMs % (60 * 1000)) / 1000);
+
+                const lateTimeString = `${lateHours.toString().padStart(2, '0')}:${lateMinutes.toString().padStart(2, '0')}:${lateSeconds.toString().padStart(2, '0')}`;
+                setTimeDisplay(lateTimeString);
+            } else {
+                // Within 30-minute posting window
+                const remainingMs = postingDeadline.getTime() - now.getTime();
+                const remainingHours = Math.floor(remainingMs / (60 * 60 * 1000));
+                const remainingMinutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+                const remainingSeconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
+
+                const remainingTimeString = `${remainingHours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                setTimeDisplay(remainingTimeString);
+                setIsLate(false);
             }
-
-            // Calculate time remaining
-            const diffSecs = Math.floor(diffMs / 1000);
-            const hours = Math.floor(diffSecs / 3600);
-            const minutes = Math.floor((diffSecs % 3600) / 60);
-            const seconds = diffSecs % 60;
-
-            const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            setTimeRemaining(timeString);
-
-            // Calculate percentage for the progress bar
-            const totalSeconds = 24 * 60 * 60; // 24 hours in seconds
-            const percentRemaining = (diffSecs / totalSeconds) * 100;
-            setPercentRemaining(Math.max(0, Math.min(percentRemaining, 100)));
         };
 
         // Initial update
@@ -44,31 +46,20 @@ const Timer = ({ promptDate, promptTime, expiresAt }) => {
         const timer = setInterval(updateTime, 1000);
 
         return () => clearInterval(timer);
-    }, [expiresAt]);
-
-    // Calculate progress bar color based on time remaining
-    const getProgressBarColor = () => {
-        if (percentRemaining > 66) return '#fff';
-        if (percentRemaining > 33) return '#FFC107'; // Yellow
-        return '#FF5252'; // Red
-    };
+    }, [promptDate]);
 
     return (
         <View style={styles.container}>
-            {/* Time Remaining Progress Bar */}
             <View style={styles.progressContainer}>
-                <View style={styles.progressBarBackground}>
-                    <View
-                        style={[
-                            styles.progressBarFill,
-                            {
-                                width: `${percentRemaining}%`,
-                                backgroundColor: getProgressBarColor()
-                            }
-                        ]}
-                    />
-                </View>
-                <Text style={styles.timeRemainingText}>{timeRemaining} remaining</Text>
+                {!isLate ? (
+                    <Text style={styles.timeRemainingText}>
+                        Time Remaining: {timeDisplay}
+                    </Text>
+                ) : (
+                    <Text style={[styles.timeRemainingText, styles.lateText]}>
+                        You are {timeDisplay} late
+                    </Text>
+                )}
             </View>
         </View>
     );
@@ -82,21 +73,14 @@ const styles = StyleSheet.create({
     progressContainer: {
         width: '100%',
     },
-    progressBarBackground: {
-        height: 3,
-        backgroundColor: '#333',
-        borderRadius: 2,
-        overflow: 'hidden',
-        marginBottom: 5,
-    },
-    progressBarFill: {
-        height: '100%',
-    },
     timeRemainingText: {
         color: '#777777',
         fontSize: 12,
         textAlign: 'center',
         fontFamily: fonts.regular,
+    },
+    lateText: {
+        color: '#FF5252', // Red color for late status
     },
 });
 

@@ -12,15 +12,15 @@ const PromptCard = ({ promptText, promptDate, promptTime }) => {
     return (
         <View style={styles.container}>
             <View style={styles.promptTextContainer}>
-                <Text style={styles.promptLabel}>Today's Prompt *</Text>
+                {/* <Text style={styles.promptLabel}>Today's Prompt *</Text> */}
                 <Text style={styles.promptText}>{promptText}</Text>
             </View>
 
-            <View style={styles.dateTimeContainer}>
+            {/* <View style={styles.dateTimeContainer}>
                 <Text style={styles.promptDateTime}>
                     {formatDate(promptDate)} • {promptTime}
                 </Text>
-            </View>
+            </View> */}
         </View>
     );
 };
@@ -43,10 +43,10 @@ const styles = StyleSheet.create({
     },
     promptText: {
         fontSize: 28,
-        fontFamily: fonts.bold,
+        fontFamily: fonts.medium,
         color: '#fff',
         textAlign: 'center', // Keeping the main prompt text centered
-        lineHeight: 36,
+        lineHeight: 30,
     },
     dateTimeContainer: {
         width: '100%',

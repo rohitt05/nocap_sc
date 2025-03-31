@@ -126,7 +126,7 @@ export default function Friends() {
                             style={styles.addButton}
                             onPress={() => sendFriendRequest(item.id)}
                         >
-                            <Feather name="user-plus" size={18} color="#3897f0" />
+                            <Feather name="user-plus" size={18} color="#fff" />
                         </TouchableOpacity>
                     )}
                     {friendStatus[item.id] === 'pending' && (
@@ -221,9 +221,11 @@ export default function Friends() {
                         {/* Invite Bar - Only shown when not searching */}
                         <View style={styles.inviteBar}>
                             <View style={styles.inviteLeft}>
+
                                 <Image
-                                    source={require('../../../assets/hattori.webp')}
-                                    style={styles.userImage}
+                                    source={require('../../../assets/a1.png')}
+                                    style={styles.logo}
+                                    resizeMode='contain'
                                 />
                                 <View style={styles.inviteTextContainer}>
                                     <Text style={styles.inviteText}>Invite your closest one's on NoCap</Text>
@@ -363,6 +365,13 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 24,
     },
+    logo: {
+        backgroundColor: '#000',
+        borderRadius: 25,
+        padding: 10,
+        width: 40,
+        height: 40,
+    },
     inviteLeft: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -375,6 +384,7 @@ const styles = StyleSheet.create({
     },
     inviteTextContainer: {
         flexDirection: 'column',
+        left: 10,
     },
     inviteText: {
         color: '#fff',

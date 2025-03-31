@@ -17,7 +17,9 @@ export const loadFonts = async () => {
             'Figtree-Light': require('../../../assets/fonts/Figtree-Light.ttf'),
             'Figtree-LightItalic': require('../../../assets/fonts/Figtree-LightItalic.ttf'),
             'Figtree-MediumItalic': require('../../../assets/fonts/Figtree-MediumItalic.ttf'),
-            'Figtree-SemiBoldItalic': require('../../../assets/fonts/Figtree-SemiBoldItalic.ttf')
+            'Figtree-SemiBoldItalic': require('../../../assets/fonts/Figtree-SemiBoldItalic.ttf'),
+          
+
         });
         console.log("Fonts loaded successfully");
         return { success: true, error: null };

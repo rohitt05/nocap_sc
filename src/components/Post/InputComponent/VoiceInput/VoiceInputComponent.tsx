@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Audio } from 'expo-av';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import { VoiceInputUtils, RecordingData } from './VoiceInputUtils';
 
-const VoiceInputComponent = ({ onRecordingComplete }) => {
-    const [recording, setRecording] = useState(null);
-    const [recordingStatus, setRecordingStatus] = useState('idle');
-    const [audioUri, setAudioUri] = useState(null);
-    const [sound, setSound] = useState(null);
-    const [duration, setDuration] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
+interface VoiceInputComponentProps {
+    onRecordingComplete?: (recordingData: RecordingData) => void;
+}
+
+const VoiceInputComponent: React.FC<VoiceInputComponentProps> = ({ onRecordingComplete }) => {
+    const [recording, setRecording] = useState<Audio.Recording | null>(null);
+    const [audioUri, setAudioUri] = useState<string | null>(null);
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [duration, setDuration] = useState<number>(0);
+    const [isRecording, setIsRecording] = useState<boolean>(false);
 
     useEffect(() => {
         // Request permissions
-        Audio.requestPermissionsAsync();
-        Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-        });
+        VoiceInputUtils.requestAudioPermissions();
 
         // Cleanup
         return () => {
@@ -30,143 +30,94 @@ const VoiceInputComponent = ({ onRecordingComplete }) => {
         };
     }, []);
 
+    async function toggleRecording() {
+        if (isRecording) {
+            await stopRecording();
+        } else {
+            await startRecording();
+        }
+    }
+
     async function startRecording() {
-        try {
-            // Clear previous recording
-            if (audioUri) {
-                setAudioUri(null);
-                if (sound) {
-                    await sound.unloadAsync();
-                    setSound(null);
-                }
+        // Clear previous recording if exists
+        if (audioUri) {
+            setAudioUri(null);
+            if (sound) {
+                await sound.unloadAsync();
+                setSound(null);
             }
+        }
 
-            // Start recording
-            const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-            );
-
-            setRecording(recording);
-            setRecordingStatus('recording');
-        } catch (error) {
-            console.error('Failed to start recording', error);
+        // Start recording
+        const newRecording = await VoiceInputUtils.startRecording();
+        if (newRecording) {
+            setRecording(newRecording);
+            setIsRecording(true);
         }
     }
 
     async function stopRecording() {
         if (!recording) return;
 
-        try {
-            setRecordingStatus('stopping');
-            await recording.stopAndUnloadAsync();
+        const recordingData = await VoiceInputUtils.stopRecording(recording);
 
-            const uri = recording.getURI();
-            setAudioUri(uri);
+        if (recordingData) {
+            setAudioUri(recordingData.uri);
+            setDuration(recordingData.duration);
 
-            // Get recording duration
-            const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-            const status = await newSound.getStatusAsync();
-            setDuration(status.durationMillis / 1000); // Convert to seconds
+            const { sound: newSound } = await Audio.Sound.createAsync({ uri: recordingData.uri });
             setSound(newSound);
 
             // Pass the recording to the parent component
             if (onRecordingComplete) {
-                onRecordingComplete({
-                    file: await fetchAudioFile(uri),
-                    uri: uri,
-                    duration: status.durationMillis / 1000
-                });
+                onRecordingComplete(recordingData);
             }
-        } catch (error) {
-            console.error('Failed to stop recording', error);
         }
 
         setRecording(null);
-        setRecordingStatus('idle');
-    }
-
-    // Helper function to fetch the audio file as a blob
-    async function fetchAudioFile(uri) {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        return blob;
-    }
-
-    async function playSound() {
-        if (!sound) return;
-
-        try {
-            setIsPlaying(true);
-            await sound.replayAsync();
-            sound.setOnPlaybackStatusUpdate((status) => {
-                if (status.didJustFinish) {
-                    setIsPlaying(false);
-                }
-            });
-        } catch (error) {
-            console.error('Failed to play sound', error);
-            setIsPlaying(false);
-        }
-    }
-
-    async function pauseSound() {
-        if (!sound) return;
-
-        try {
-            await sound.pauseAsync();
-            setIsPlaying(false);
-        } catch (error) {
-            console.error('Failed to pause sound', error);
-        }
-    }
-
-    function formatDuration(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        setIsRecording(false);
     }
 
     return (
         <View style={styles.container}>
-            {audioUri ? (
-                <View style={styles.playbackContainer}>
+            <View style={styles.iconContainer}>
+                <FontAwesome
+                    name={isRecording ? "microphone-slash" : "microphone"}
+                    size={100}
+                    color={isRecording ? "#ff4040" : "#fff"}
+                />
+            </View>
+
+            <Text style={styles.instructionText}>
+                {isRecording
+                    ? "Recording in progress..."
+                    : "Tap the microphone to start recording"}
+            </Text>
+
+            <TouchableOpacity
+                style={styles.recordButton}
+                onPress={toggleRecording}
+            >
+                <Text style={styles.recordButtonText}>
+                    {isRecording ? "Stop Recording" : "Start Recording"}
+                </Text>
+            </TouchableOpacity>
+
+            {audioUri && (
+                <View style={styles.recordingInfoContainer}>
                     <Text style={styles.durationText}>
-                        {formatDuration(duration)}
+                        Recorded: {VoiceInputUtils.formatDuration(duration)}
                     </Text>
                     <TouchableOpacity
-                        style={styles.playButton}
-                        onPress={isPlaying ? pauseSound : playSound}
+                        style={styles.clearButton}
+                        onPress={() => {
+                            setAudioUri(null);
+                            setSound(null);
+                        }}
                     >
-                        <Ionicons
-                            name={isPlaying ? "pause" : "play"}
-                            size={24}
-                            color="white"
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.recordAgainButton}
-                        onPress={startRecording}
-                    >
-                        <Text style={styles.recordAgainText}>Record Again</Text>
+                        <Text style={styles.clearButtonText}>Clear Recording</Text>
                     </TouchableOpacity>
                 </View>
-            ) : (
-                <TouchableOpacity
-                    style={[
-                        styles.recordButton,
-                        recordingStatus === 'recording' && styles.recordingButton
-                    ]}
-                    onPress={recordingStatus === 'recording' ? stopRecording : startRecording}
-                >
-                    <Ionicons
-                        name={recordingStatus === 'recording' ? "stop" : "mic"}
-                        size={24}
-                        color="white"
-                    />
-                    <Text style={styles.recordText}>
-                        {recordingStatus === 'recording' ? 'Stop Recording' : 'Start Recording'}
-                    </Text>
-                </TouchableOpacity>
             )}
         </View>
     );
@@ -179,44 +130,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
+    iconContainer: {
+        marginBottom: 20,
+    },
+    instructionText: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
     recordButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#6441A5',
-        padding: 15,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#132fba',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         borderRadius: 30,
-        width: '80%',
     },
-    recordingButton: {
-        backgroundColor: '#ff4040',
-    },
-    recordText: {
-        color: 'white',
-        marginLeft: 10,
+    recordButtonText: {
+        color: '#fff',
         fontWeight: 'bold',
+        textAlign: 'center',
     },
-    playbackContainer: {
+    recordingInfoContainer: {
+        marginTop: 20,
         alignItems: 'center',
-        width: '100%',
     },
     durationText: {
-        color: 'white',
-        fontSize: 24,
-        marginBottom: 15,
+        color: '#666',
+        marginBottom: 10,
     },
-    playButton: {
-        backgroundColor: '#6441A5',
-        padding: 15,
-        borderRadius: 50,
-        marginBottom: 15,
+    clearButton: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#ff4040',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
     },
-    recordAgainButton: {
-        padding: 10,
-    },
-    recordAgainText: {
-        color: '#6441A5',
-        fontWeight: 'bold',
+    clearButtonText: {
+        color: '#ff4040',
+        fontSize: 12,
     },
 });
 

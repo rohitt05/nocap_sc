@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
     responseItem: {
         borderWidth: 0.3,
         borderColor: '#333',
-        borderRadius: 25,
+        borderRadius: 24,
         marginBottom: 16,
         overflow: 'hidden',
         position: 'relative',

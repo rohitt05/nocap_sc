@@ -1,10 +1,11 @@
-import { View, StyleSheet, SafeAreaView, Animated, RefreshControl } from 'react-native';
-import React, { useRef, useState, useCallback } from 'react';
+import { View, StyleSheet, Text, SafeAreaView, Animated, RefreshControl } from 'react-native';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Prompt from '../../components/prompts';
 import { useNavigation } from '@react-navigation/native';
 import { HomeHeader } from '../../components/Header/Header';
 import Responses from '../../components/responses/responses';
-
+import NoResponse from '../../components/NoResponse'; // Import the new component
+import { checkUserResponse, loadPromptAndCheckResponse } from '../../../API/checkPromptResponse'; // Import the extracted functions
 
 const HomeScreen = () => {
     // Create an animated value for scroll position
@@ -13,15 +14,40 @@ const HomeScreen = () => {
     // State for refresh control
     const [refreshing, setRefreshing] = useState(false);
 
+    // State to track if user has responded to current prompt
+    const [hasResponded, setHasResponded] = useState(false);
+
+    // State to store current prompt ID
+    const [currentPromptId, setCurrentPromptId] = useState(null);
+
+    // State for loading status
+    const [loading, setLoading] = useState(true);
+
     // Get navigation to update the header with our animated value
     const navigation = useNavigation();
+
+    // Use a key to force Responses component to re-mount and fetch new data
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    // Load prompt data and check response status
+    const loadPromptData = async () => {
+        try {
+            setLoading(true);
+            const { promptId, hasResponded } = await loadPromptAndCheckResponse();
+            setCurrentPromptId(promptId);
+            setHasResponded(hasResponded);
+        } catch (error) {
+            console.error('Error in loadPromptData:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Handle refresh function
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
-            // This will trigger the fetchResponses function inside the Responses component
-            // when the component notices the refreshKey has changed
+            await loadPromptData();
             setRefreshKey(prevKey => prevKey + 1);
             await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for better UX
         } catch (error) {
@@ -31,11 +57,13 @@ const HomeScreen = () => {
         }
     }, []);
 
-    // Use a key to force Responses component to re-mount and fetch new data
-    const [refreshKey, setRefreshKey] = useState(0);
+    // Initial load
+    useEffect(() => {
+        loadPromptData();
+    }, []);
 
     // Update header with the scrollY value
-    React.useEffect(() => {
+    useEffect(() => {
         navigation.setOptions({
             headerTitle: () => <HomeHeader scrollY={scrollY} />,
         });
@@ -61,7 +89,16 @@ const HomeScreen = () => {
                 }
             >
                 <Prompt />
-                <Responses key={refreshKey} />
+
+                {loading ? (
+                    <View style={styles.messageContainer}>
+                        <Text style={styles.loadingText}>Loading...</Text>
+                    </View>
+                ) : hasResponded ? (
+                    <Responses key={refreshKey} />
+                ) : (
+                    <NoResponse /> // Use the new NoResponse component here
+                )}
             </Animated.ScrollView>
         </SafeAreaView>
     );
@@ -74,6 +111,18 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
+    },
+    messageContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        marginTop: 50,
+    },
+    loadingText: {
+        color: '#aaa',
+        fontSize: 16,
+        textAlign: 'center',
     }
 });
 

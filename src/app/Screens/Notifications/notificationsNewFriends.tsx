@@ -48,6 +48,7 @@ const NotificationsNewFriends = () => {
             <SentModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
+
             />
         </SafeAreaView>
     );

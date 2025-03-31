@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ResponseItemProps } from '../../types';
 import { Entypo, FontAwesome, Feather } from '@expo/vector-icons';
-import { fonts } from '../../../../utils/Fonts/fonts';
 import { Image } from 'expo-image';
 import { formatTimestamp, formatTime, useAudioPlayer } from './utils';
 import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from './styles';
 import { Link } from 'expo-router';
 import ReactionPicker from '../ReactionPicker'; // Import the ReactionPicker component
+import ReactionTexts from '../ReactionText/ReactionTexts';
+import ShareModal from '../../../SharePostModal'; // Import the ShareModal component
+
 
 // Update the ResponseItemProps to include necessary properties
 interface ExtendedResponseItemProps extends ResponseItemProps {
@@ -17,30 +19,30 @@ interface ExtendedResponseItemProps extends ResponseItemProps {
 
 const AudioResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
     const { audioState, togglePlayback } = useAudioPlayer(item.content);
-    // State to control reaction picker visibility
     const [showReactionPicker, setShowReactionPicker] = useState(false);
+    const [showReactionTexts, setShowReactionTexts] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false); // Add state for ShareModal
 
-    // Validate currentUserId early
     const isUserAuthenticated = !!currentUserId && typeof currentUserId === 'string' && currentUserId.length > 0;
 
     if (!isUserAuthenticated) {
         console.log('AudioResponse: No valid currentUserId provided', { currentUserId });
     }
 
-    // Handle reaction selection from the picker
     const handleReactionSelected = (reactionType: string) => {
-        // Just a simple callback - we don't need to refresh reactions anymore
         console.log(`Reaction ${reactionType} was selected for audio response`);
+    };
+
+    const handleReactionTextSelected = (reactionType: string) => {
+        console.log(`Reaction text ${reactionType} was selected for audio response`);
     };
 
     return (
         <View style={styles.responseItem}>
             <LinearGradient
-                colors={['#000', '#000', '#090238', '#000', '#000']}
-                locations={[0, 0.25, 0.5, 0.75, 1]}
+                colors={['#87CEFA', '#1E90FF', '#0000CD', '#000033']}
                 style={styles.contentContainer}
-                start={{ x: 0.1, y: 0.1 }}
-                end={{ x: 0.9, y: 0.9 }}
+                locations={[0, 0.3, 0.7, 1]}
             >
                 {/* Header with user info and timestamp */}
                 <View style={styles.header}>
@@ -61,7 +63,9 @@ const AudioResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                         </Link>
                     </View>
                     <Text style={styles.timestamp}>{formatTimestamp(item.timestamp)}</Text>
-                    <TouchableOpacity style={styles.menuDotsContainer}>
+                    <TouchableOpacity
+                        style={styles.menuDotsContainer}
+                        onPress={() => setShowShareModal(true)} >
                         <Entypo name="dots-two-vertical" size={16} color="#fff" style={styles.menuDots} />
                     </TouchableOpacity>
                 </View>
@@ -95,6 +99,25 @@ const AudioResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                     <Text style={styles.errorText}>{audioState.error}</Text>
                 )}
 
+                {/* ShareModal component */}
+                <ShareModal
+                    isVisible={showShareModal}
+                    onClose={() => setShowShareModal(false)}
+                    postId={item.id}
+                    postType={item.type}
+                />
+
+                {/* ReactionTexts */}
+                {isUserAuthenticated && (
+                    <ReactionTexts
+                        responseId={item.id}
+                        userId={currentUserId}
+                        isVisible={showReactionTexts}
+                        onClose={() => setShowReactionTexts(false)}
+                        onReactionSelected={handleReactionTextSelected}
+                    />
+                )}
+
                 {/* Only render ReactionPicker if user is authenticated */}
                 {isUserAuthenticated && (
                     <ReactionPicker
@@ -108,16 +131,27 @@ const AudioResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
 
                 {/* Reaction and send buttons */}
                 <View style={styles.reactionsContainer}>
-                    {/* Send button without background */}
-                    <TouchableOpacity style={styles.sendButton}>
-                        <Feather name="send" size={18} color="#fff" />
-                    </TouchableOpacity>
+                    {/* Replace send button with ReactionTexts trigger */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionTexts && additionalStyles.activeButton]}
+                            onPress={() => {
+                                setShowReactionTexts(prev => !prev);
+                                setShowReactionPicker(false); // Close emoji picker if open
+                            }}
+                        >
+                            <Feather name="type" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
 
-                    {/* Only show emoji button if user is authenticated */}
+                    {/* Emoji reaction button */}
                     {isUserAuthenticated && (
                         <TouchableOpacity
                             style={[styles.reactionButton, showReactionPicker && additionalStyles.activeButton]}
-                            onPress={() => setShowReactionPicker(prev => !prev)}
+                            onPress={() => {
+                                setShowReactionPicker(prev => !prev);
+                                setShowReactionTexts(false); // Close reaction texts if open
+                            }}
                         >
                             <Entypo name="emoji-happy" size={18} color="#fff" />
                         </TouchableOpacity>

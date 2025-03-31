@@ -1,12 +1,40 @@
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    SafeAreaView,
+    ScrollView,
+    RefreshControl
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SentModal from '../Screens/Notifications/sentModal';
 import NotificationList from '../Screens/Notifications/NotificationList';
 
-const NotificationsNewFriends = () => {
+const Notifications = () => {
     // State for modal visibility
     const [modalVisible, setModalVisible] = useState(false);
+
+    // State for refresh control
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Refresh handler
+    const onRefresh = useCallback(() => {
+        // Set refreshing to true
+        setRefreshing(true);
+
+        // Simulate a refresh action
+        // In a real app, you would fetch new data here
+        setTimeout(() => {
+            // Reset the refresh state
+            setRefreshing(false);
+
+            // You might want to add logic to reload notifications or update data
+            // For example, you could pass a refresh function to child components
+            // or use a state management solution like Redux or Context
+        }, 1000); // Simulated 1-second refresh
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -14,28 +42,43 @@ const NotificationsNewFriends = () => {
             <View style={styles.header}>
                 <View style={styles.leftPlaceholder} />
                 <Text style={styles.headerTitle}>Notifications</Text>
-                <View style={styles.rightPlaceholder} />
+                <TouchableOpacity
+                    style={styles.sentButton}
+                    onPress={() => setModalVisible(true)}
+                >
+                    <Text style={styles.sentButtonText}>Sent</Text>
+                    <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#fff"
+                        style={styles.chevron}
+                    />
+                </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* Main content with Sent button */}
-                <View style={styles.contentHeader}>
-                    <View style={styles.spacer} />
-                    <TouchableOpacity
-                        style={styles.sentButton}
-                        onPress={() => setModalVisible(true)}
-                    >
-                        <Text style={styles.sentButtonText}>Sent</Text>
-                        <Ionicons name="chevron-down" size={16} color="#fff" style={styles.chevron} />
-                    </TouchableOpacity>
-                </View>
-
+            {/* Scrollable content with pull-to-refresh */}
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#fff']} // Customize refresh indicator color
+                        tintColor={'#fff'} // iOS refresh indicator color
+                        title={'Updating notifications...'}
+                    />
+                }
+            >
                 {/* Notification List Component */}
                 <NotificationList />
             </ScrollView>
 
             {/* Sent Modal */}
-            <SentModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+            <SentModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+            // refreshing={refreshing}
+            />
         </SafeAreaView>
     );
 };
@@ -66,16 +109,6 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
     },
-    contentHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 8,
-    },
-    spacer: {
-        flex: 1,
-    },
     sentButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -93,4 +126,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default NotificationsNewFriends;
+export default Notifications;

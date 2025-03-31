@@ -77,7 +77,7 @@ export const useReactionNotifications = () => {
 
             if (reactionsError) throw reactionsError;
 
-            // 3. Process and group notifications by user and response
+            // 3. Process and group notifications by user, response, and date
             const processedNotifications = processReactions(data as RawReactionNotification[]);
             setReactionNotifications(processedNotifications);
         } catch (err) {
@@ -102,9 +102,13 @@ export const useReactionNotifications = () => {
             return [];
         }
 
-        // Group reactions by user_id + response_id combination
+        // Group reactions by user_id + response_id + date combination
         const groupedReactions = validReactions.reduce((groups, reaction) => {
-            const key = `${reaction.user_id}-${reaction.response_id}`;
+            // Extract the date portion of the timestamp (YYYY-MM-DD)
+            const reactionDate = new Date(reaction.created_at).toISOString().split('T')[0];
+
+            // Create a unique key that includes the date
+            const key = `${reaction.user_id}-${reaction.response_id}-${reactionDate}`;
 
             if (!groups[key]) {
                 groups[key] = {
@@ -142,8 +146,11 @@ export const useReactionNotifications = () => {
                 ? promptText.substring(0, 30) + '...'
                 : promptText;
 
+            // Generate a more specific ID that includes date info
+            const reactionDate = new Date(group.latest).toISOString().split('T')[0];
+
             return {
-                id: `reaction-${latestReaction.user_id}-${latestReaction.response_id}`,
+                id: `reaction-${latestReaction.user_id}-${latestReaction.response_id}-${reactionDate}`,
                 user_id: latestReaction.user_id,
                 full_name: latestReaction.users.full_name,
                 avatar_url: latestReaction.users.avatar_url,

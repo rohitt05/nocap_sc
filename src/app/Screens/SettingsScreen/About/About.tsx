@@ -1,7 +1,66 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, Animated, Dimensions } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+
+interface DropdownItemProps {
+    icon: React.ReactNode;
+    title: string;
+    children: string;
+    versionText?: string;
+}
+
+const DropdownItem: React.FC<DropdownItemProps> = ({
+    icon,
+    title,
+    children,
+    versionText
+}) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const scrollViewRef = useRef<ScrollView>(null);
+    const screenHeight = Dimensions.get('window').height;
+
+    const toggleDropdown = () => {
+        setIsExpanded(!isExpanded);
+        // Reset scroll position when closing
+        if (isExpanded && scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: 0, animated: false });
+        }
+    };
+
+    return (
+        <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+                style={styles.optionItem}
+                onPress={toggleDropdown}
+            >
+                <View style={styles.iconContainer}>
+                    {icon}
+                </View>
+                <Text style={styles.optionText}>{title}</Text>
+                {versionText && <Text style={styles.versionText}>{versionText}</Text>}
+                <MaterialIcons
+                    name={isExpanded ? "expand-less" : "expand-more"}
+                    size={24}
+                    color="#666"
+                />
+            </TouchableOpacity>
+
+            {isExpanded && (
+                <View style={styles.dropdownContent}>
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.dropdownScrollView}
+                        contentContainerStyle={styles.dropdownScrollViewContent}
+                        showsVerticalScrollIndicator={true}
+                    >
+                        <Text style={styles.dropdownText}>{children}</Text>
+                    </ScrollView>
+                </View>
+            )}
+        </View>
+    );
+};
 
 const About = () => {
     return (
@@ -24,40 +83,140 @@ const About = () => {
 
             <ScrollView style={styles.content}>
                 {/* App Info */}
-                <TouchableOpacity style={styles.optionItem}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="information-circle-outline" size={24} color="white" />
-                    </View>
-                    <Text style={styles.optionText}>App Version</Text>
-                    <Text style={styles.versionText}>0.0.1 (000)</Text>
-                </TouchableOpacity>
+                <DropdownItem
+                    icon={<Ionicons name="information-circle-outline" size={24} color="white" />}
+                    title="App Version"
+                    versionText="0.0.1 (000)"
+                >
+                    {`This is version 0.0.1 of our application. 
+
+Key Details:
+• Initial release
+• Early development stage
+• Baseline features implemented
+
+Our commitment is to continuously improve and enhance your experience with regular updates.`}
+                </DropdownItem>
 
                 {/* Terms of Service */}
-                <TouchableOpacity style={styles.optionItem}>
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="description" size={24} color="white" />
-                    </View>
-                    <Text style={styles.optionText}>Terms of Service</Text>
-                    <MaterialIcons name="chevron-right" size={24} color="#666" />
-                </TouchableOpacity>
+                <DropdownItem
+                    icon={<MaterialIcons name="description" size={24} color="white" />}
+                    title="Terms of Service"
+                >
+                    {`Terms of Service Highlights:
+
+1. Acceptance of Terms
+• By using this app, you agree to these terms
+• Terms may be updated periodically
+• Continued use implies acceptance of changes
+
+2. User Responsibilities
+• Comply with local and international laws
+• Protect your account credentials
+• Use the app ethically and responsibly
+
+3. Intellectual Property
+• All app content is proprietary
+• No unauthorized reproduction
+• Trademarks and copyrights reserved
+
+4. Limitation of Liability
+• App provided "as is" without warranties
+• No guarantee of uninterrupted service
+• Limited liability for direct/indirect damages
+
+5. Account Termination
+• We reserve the right to terminate accounts
+• Violation of terms may result in suspension
+• Users can discontinue app usage anytime`}
+                </DropdownItem>
 
                 {/* Privacy Policy */}
-                <TouchableOpacity style={styles.optionItem}>
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="privacy-tip" size={24} color="white" />
-                    </View>
-                    <Text style={styles.optionText}>Privacy Policy</Text>
-                    <MaterialIcons name="chevron-right" size={24} color="#666" />
-                </TouchableOpacity>
+                <DropdownItem
+                    icon={<MaterialIcons name="privacy-tip" size={24} color="white" />}
+                    title="Privacy Policy"
+                >
+                    {`Privacy Permissions and Data Usage
+
+1. Camera Permission
+• Purpose: Photo capture and document scanning
+• Activated only during explicit camera use
+• Can be revoked at any time in settings
+
+2. Microphone Permission
+• Enables voice commands and recording
+• Strictly opt-in functionality
+• Never accessed without direct user interaction
+
+3. Location Services
+• Optional precise or approximate location
+• Used for personalized recommendations
+• No permanent location data storage
+• Full user control and transparency
+
+4. Storage Access
+• Limited to app-specific directories
+• File saving and content download
+• No unrestricted device storage access
+
+5. Contacts Integration
+• Completely voluntary feature
+• No automatic contact uploads
+• User-controlled sharing mechanisms
+
+6. Notification Preferences
+• Important updates and personalized alerts
+• Fully customizable settings
+• One-tap disable option
+
+Data Protection Commitments:
+• Zero data selling policy
+• Minimal information collection
+• End-to-end encryption
+• Regular security audits
+• 100% Transparent data handling`}
+                </DropdownItem>
 
                 {/* Licenses */}
-                <TouchableOpacity style={styles.optionItem}>
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="gavel" size={24} color="white" />
-                    </View>
-                    <Text style={styles.optionText}>Open Source Licenses</Text>
-                    <MaterialIcons name="chevron-right" size={24} color="#666" />
-                </TouchableOpacity>
+                <DropdownItem
+                    icon={<MaterialIcons name="gavel" size={24} color="white" />}
+                    title="Open Source Licenses"
+                >
+                    {`Open Source Libraries Acknowledgment:
+
+1. React Native
+• Version: 0.72.x
+• License: MIT
+• Copyright: Facebook, Inc.
+• Core mobile application framework
+
+2. Expo
+• Version: 49.x
+• License: MIT
+• Provides essential development tools
+• Simplified React Native development
+
+3. React Navigation
+• Version: 6.x
+• License: MIT
+• Routing and navigation implementation
+• Smooth screen transitions
+
+4. Vector Icons
+• Comprehensive icon library
+• License: MIT
+• Customizable icon solutions
+
+5. AsyncStorage
+• Persistent, key-value storage system
+• License: MIT
+• Managed by React Native Community
+
+Detailed Licensing:
+• Full license texts available upon request
+• Profound appreciation for open-source community
+• Committed to maintaining open-source ethics`}
+                </DropdownItem>
             </ScrollView>
         </SafeAreaView>
     );
@@ -92,13 +251,15 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginTop: 20,
     },
+    dropdownContainer: {
+        marginBottom: 16,
+    },
     optionItem: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#222',
         borderRadius: 10,
         padding: 16,
-        marginBottom: 16,
     },
     iconContainer: {
         marginRight: 16,
@@ -112,7 +273,25 @@ const styles = StyleSheet.create({
     versionText: {
         color: '#666',
         fontSize: 14,
+        marginRight: 10,
     },
+    dropdownContent: {
+        backgroundColor: '#000',
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
+        maxHeight: 300, // Set a max height
+    },
+    dropdownScrollView: {
+        paddingHorizontal: 16,
+    },
+    dropdownScrollViewContent: {
+        paddingVertical: 12,
+    },
+    dropdownText: {
+        color: 'white',
+        fontSize: 14,
+        lineHeight: 24,
+    }
 });
 
 export default About;

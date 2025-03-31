@@ -8,6 +8,8 @@ import { ResponseItemProps } from '../../types';
 import { styles } from './styles';
 import { Link } from 'expo-router';
 import ReactionPicker from '../ReactionPicker';
+import ReactionTexts from '../ReactionText/ReactionTexts';
+import ShareModal from '../../../SharePostModal'; // Import the ShareModal component
 import {
     formatTimestamp,
     getDirectGiphyUrl,
@@ -22,6 +24,8 @@ interface ExtendedResponseItemProps extends ResponseItemProps {
 const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
     // State to control reaction picker visibility
     const [showReactionPicker, setShowReactionPicker] = useState(false);
+    const [showReactionTexts, setShowReactionTexts] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false); // Add state for ShareModal
 
     // Use the custom hook for video handling
     const mediaUrl = item.content;
@@ -45,6 +49,10 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
     const handleReactionSelected = (reactionType: string) => {
         // Just a simple callback
         console.log(`Reaction ${reactionType} was selected for media response`);
+    };
+
+    const handleReactionTextSelected = (reactionType: string) => {
+        console.log(`Reaction text ${reactionType} was selected for media response`);
     };
 
     // Render appropriate media based on item type
@@ -152,11 +160,33 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                 {/* Timestamp now appears here */}
                 <Text style={styles.overlayTimestamp}>{formatTimestamp(item.timestamp)}</Text>
 
-                {/* Menu dots in top right corner */}
-                <TouchableOpacity style={styles.menuDotsContainer}>
+                {/* Menu dots in top right corner - now opens ShareModal */}
+                <TouchableOpacity
+                    style={styles.menuDotsContainer}
+                    onPress={() => setShowShareModal(true)}
+                >
                     <Entypo name="dots-two-vertical" size={24} color="white" style={styles.menuDots} />
                 </TouchableOpacity>
             </View>
+
+            {/* ShareModal component */}
+            <ShareModal
+                isVisible={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                postId={item.id}
+                postType={item.type}
+            />
+
+            {/* Only render ReactionTexts if user is authenticated */}
+            {isUserAuthenticated && (
+                <ReactionTexts
+                    responseId={item.id}
+                    userId={currentUserId}
+                    isVisible={showReactionTexts}
+                    onClose={() => setShowReactionTexts(false)}
+                    onReactionSelected={handleReactionTextSelected}
+                />
+            )}
 
             {/* Only render ReactionPicker if user is authenticated */}
             {isUserAuthenticated && (
@@ -172,12 +202,17 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
             {/* Bottom bar with reactions */}
             <View style={styles.bottomBar}>
                 <View style={styles.reactionsContainer}>
-                    {/* Send button */}
-                    <TouchableOpacity style={styles.sendButton}>
-                        <Feather name="send" size={18} color="#fff" />
-                    </TouchableOpacity>
+                    {/* Replace send button with ReactionTexts trigger */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showReactionTexts && additionalStyles.activeButton]}
+                            onPress={() => setShowReactionTexts(prev => !prev)}
+                        >
+                            <Feather name="type" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
 
-                    {/* Only show emoji button if user is authenticated */}
+                    {/* Existing reaction emoji button */}
                     {isUserAuthenticated && (
                         <TouchableOpacity
                             style={[styles.reactionButton, showReactionPicker && additionalStyles.activeButton]}

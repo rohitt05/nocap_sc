@@ -7,7 +7,7 @@ const TextInputComponent = ({ inputText, setInputText }) => {
         <View style={styles.inputContainer}>
             <TextInput
                 style={styles.textInput}
-                placeholder="Add your respone and post it"
+                placeholder="Add your respone and drop it"
                 placeholderTextColor="#666"
                 multiline={true}
                 value={inputText}

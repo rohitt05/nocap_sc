@@ -64,7 +64,7 @@ export const HomeHeader = ({
             {/* Original header that fades out on scroll */}
             <Animated.View style={[styles.headerRow, { opacity: headerOpacity }]}>
                 <Image
-                    source={require("../../../assets/logo.png")}
+                    source={require("../../../assets/a1.png")}
                     style={styles.logo}
                 />
                 {/* Using zIndex to ensure touchability */}
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
         padding: 10, // Add padding to increase touch target
     },
     profileImage: {
-        width: 40,
-        height: 50,
+        width: 30,
+        height: 30,
         borderRadius: 25,
         resizeMode: 'cover',
         borderWidth: 1,
