@@ -5,6 +5,7 @@ import { HomeHeader, StandardHeader } from "../../components/Header/Header";
 import React from "react";
 import { Animated } from "react-native";
 
+
 export default function TabLayout() {
     // Common tab screen options
     const getCommonScreenOptions = (title: string) => ({
@@ -14,6 +15,7 @@ export default function TabLayout() {
     });
 
     return (
+       
         <Tabs
             screenOptions={{
                 tabBarStyle: {

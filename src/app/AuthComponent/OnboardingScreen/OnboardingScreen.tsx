@@ -20,7 +20,7 @@ export default function OnboardingScreen({ onGetStarted }) {
                 />
                 <View style={styles.textContainer}>
                     <Text style={styles.taglinePrimary}>Unfiltered, unedited, undeniable.</Text>
-                    <Text style={styles.taglineSecondary}>For moments that don't need a filter</Text>
+                   
                 </View>
                 <TouchableOpacity
                     style={styles.getStartedButton}
@@ -58,14 +58,10 @@ const styles = StyleSheet.create({
     taglinePrimary: {
         color: 'white',
         fontSize: 20,
-        fontWeight: 'bold',
+        fontWeight: 'medium',
         marginBottom: 5,
     },
-    taglineSecondary: {
-        color: 'white',
-        fontSize: 16,
-        fontStyle: 'italic',
-    },
+ 
     getStartedButton: {
         backgroundColor: 'rgba(255,255,255,0.1)', // Slightly increased opacity
         paddingVertical: 15,

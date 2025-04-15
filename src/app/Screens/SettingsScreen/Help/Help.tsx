@@ -50,7 +50,7 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 
 const Help = () => {
     const handleContactUs = () => {
-        const email = 'rohitkattimani172@gmail.com';
+        const email = 'nocaaappppp@gmail.com';
         const subject = 'App Support Inquiry';
         const body = 'Hello,\n\nI have a question about the app:\n';
 

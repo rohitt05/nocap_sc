@@ -5,6 +5,7 @@ import ResponseItem from './components/ResponseItem';
 import { ResponseItemData, ResponsesData } from './types';
 import { fonts } from '../../utils/Fonts/fonts';
 import { fetchResponses } from '../../../API/fetchResponses';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Responses: React.FC = () => {
     const [responsesData, setResponsesData] = useState<ResponsesData>({ responses_received: [] });
@@ -56,7 +57,7 @@ const Responses: React.FC = () => {
     }
 
     return (
-        <View style={styles.container}>
+        <GestureHandlerRootView style={styles.container}>
             <Text style={styles.headerText}>Your Friends' Responses</Text>
             <ScrollView
                 contentContainerStyle={styles.scrollViewContent}
@@ -80,7 +81,7 @@ const Responses: React.FC = () => {
                     </Text>
                 )}
             </ScrollView>
-        </View>
+        </GestureHandlerRootView>
     );
 };
 

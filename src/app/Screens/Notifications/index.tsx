@@ -1,1 +1,1 @@
-export { default as NotificationsNewFriends } from './notificationsNewFriends';
+export { default } from './notificationsNewFriends';

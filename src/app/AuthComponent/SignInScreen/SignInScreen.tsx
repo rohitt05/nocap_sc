@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         paddingHorizontal: 20,
         marginTop: 40,
-       
+
     },
     inputGroup: {
         marginBottom: 20,

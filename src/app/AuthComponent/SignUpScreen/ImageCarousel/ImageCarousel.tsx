@@ -103,6 +103,7 @@ export default function SignUpCarousel({
                     resizeMode="contain"
                 />
             </View>
+            {/* <Text style={styles.taglineSecondary}>For moments that don't need a filter</Text> */}
         </View>
     );
 }
@@ -139,5 +140,10 @@ const styles = StyleSheet.create({
         width: 400, // Reduced size for better proportions
         height: 400, // Reduced size for better proportions
         zIndex: 100,
-    }
+    },
+    taglineSecondary: {
+        color: 'white',
+        fontSize: 16,
+        fontStyle: 'italic',
+    },
 });

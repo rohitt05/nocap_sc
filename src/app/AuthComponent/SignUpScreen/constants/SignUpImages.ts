@@ -7,4 +7,4 @@ export const signUpImages = [
     require('../../../../../assets/SignInImages/lg5.jpg')
 ];
 
-export const logo = require('../../../../../assets/a1.png');
+export const logo = require('../../../../../assets/signuplogo1.png');

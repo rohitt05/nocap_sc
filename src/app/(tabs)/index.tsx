@@ -4,10 +4,18 @@ import Prompt from '../../components/prompts';
 import { useNavigation } from '@react-navigation/native';
 import { HomeHeader } from '../../components/Header/Header';
 import Responses from '../../components/responses/responses';
-import NoResponse from '../../components/NoResponse'; // Import the new component
-import { checkUserResponse, loadPromptAndCheckResponse } from '../../../API/checkPromptResponse'; // Import the extracted functions
+import NoResponse from '../../components/NoResponse';
+import { loadPromptAndCheckResponse } from '../../../API/checkPromptResponse';
+import { useNotifications } from '../context/NotificationContext';
 
 const HomeScreen = () => {
+   const {notification, expoPushToken, error} = useNotifications();
+   
+   // Log the Expo push token when it changes
+   useEffect(() => {
+     console.log('Expo Push Token:', expoPushToken);
+   }, [expoPushToken]);
+
     // Create an animated value for scroll position
     const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -97,7 +105,7 @@ const HomeScreen = () => {
                 ) : hasResponded ? (
                     <Responses key={refreshKey} />
                 ) : (
-                    <NoResponse /> // Use the new NoResponse component here
+                    <NoResponse />
                 )}
             </Animated.ScrollView>
         </SafeAreaView>
@@ -123,6 +131,12 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontSize: 16,
         textAlign: 'center',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        textAlign: 'center',
+        padding: 20,
     }
 });
 
