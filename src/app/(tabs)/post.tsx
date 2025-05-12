@@ -27,9 +27,29 @@ const Post = () => {
 
     // State for different content types
     const [inputText, setInputText] = useState('');
-    const [selectedGif, setSelectedGif] = useState(null);
-    const [voiceRecording, setVoiceRecording] = useState(null);
-    const [mediaFile, setMediaFile] = useState(null);
+    interface Gif {
+        images: {
+            original: {
+                url: string;
+            };
+        };
+        caption?: string;
+    }
+
+    const [selectedGif, setSelectedGif] = useState<Gif | null>(null);
+    interface VoiceRecording {
+        uri: string;
+        caption?: string;
+    }
+
+    const [voiceRecording, setVoiceRecording] = useState<VoiceRecording | null>(null);
+    interface MediaFile {
+        uri: string;
+        type: string;
+        caption?: string;
+    }
+
+    const [mediaFile, setMediaFile] = useState<MediaFile | null>(null);
 
     // Current user state
     const [currentUser, setCurrentUser] = useState(null);
@@ -63,7 +83,6 @@ const Post = () => {
         fetchUserData();
     }, []);
 
-    // Fetch prompt data on component mount
     useEffect(() => {
         async function loadPromptData() {
             try {
@@ -71,7 +90,7 @@ const Post = () => {
                 setPromptData({
                     id: data.prompt.id,
                     text: data.prompt.text,
-                    date: new Date().toISOString(),
+                    date: data.selectedAt, // Use selectedAt instead of current date
                     time: data.timeRemaining,
                     expiresAt: data.expiresAt
                 });
@@ -81,7 +100,7 @@ const Post = () => {
                 setPromptData({
                     id: 'fallback-id',
                     text: "What was your most memorable moment today?",
-                    date: new Date().toISOString(),
+                    date: new Date().toISOString(), // For fallback, use current time
                     time: "00:00:00",
                     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
                 });
@@ -105,7 +124,10 @@ const Post = () => {
 
     // Handle media file selection
     const handleMediaSelect = (file) => {
-        setMediaFile(file);
+        setMediaFile({
+            ...file,
+            caption: file.caption || '' // Store the caption if provided
+        });
     };
 
     // Determine if post button should be enabled
@@ -157,17 +179,18 @@ const Post = () => {
                     break;
                 case 'GIF':
                     contentType = 'gif';
-                    // Make sure to use the same URL format that you're using in GifInputComponent
-                    fileUrl = selectedGif.images.original.url;
+                    fileUrl = selectedGif?.images?.original?.url || null;
+                    textContent = selectedGif?.caption || null; // Add caption support for GIFs
                     break;
                 case 'VOICE':
                     contentType = 'audio';
                     fileUrl = await uploadAudio(voiceRecording);
+                    textContent = voiceRecording?.caption || null; // Add caption support for audio
                     break;
                 case 'MEDIA':
-                    // Determine if it's an image or video
-                    contentType = mediaFile.type.startsWith('image') ? 'image' : 'video';
+                    contentType = mediaFile && mediaFile.type.startsWith('image') ? 'image' : 'video';
                     fileUrl = await uploadMedia(mediaFile);
+                    textContent = mediaFile?.caption || null; // Use the caption for media files
                     break;
             }
 
@@ -321,14 +344,12 @@ const Post = () => {
 
             {/* Post Content */}
             <View style={styles.content}>
-                {/* Timer Component */}
-                {/* <Timer promptSDate={promptData.date} promptTime={promptData.time} expiresAt={promptData.expiresAt} /> */}
-
                 {/* Prompt Card Component */}
                 <PromptCard
                     promptText={promptData.text}
                     promptDate={promptData.date}
                     promptTime={promptData.time}
+                    expiresAt={promptData.expiresAt}
                 />
 
                 {/* Input Component */}

@@ -131,4 +131,35 @@ export const styles = StyleSheet.create({
         fontSize: 24, // Slightly larger emoji
         color: '#FF4500', // Match text color
     },
+    // Add these to your styles.ts file
+    curseNotificationContainer: {
+        marginBottom: 5,
+    },
+    curseEmojiContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    chevronContainer: {
+        marginLeft: 5,
+        padding: 5,
+    },
+    curseDropdown: {
+        backgroundColor: '#000',
+        borderRadius: 8,
+        padding: 16,
+        marginHorizontal: 16,
+        marginTop: -5,
+        marginBottom: 10,
+    },
+    curseDetailText: {
+        color: '#fff',
+        fontSize: 14,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emojiAnimationContainer: {
+        height: 80,
+        width: '100%',
+        position: 'relative',
+    },
 });

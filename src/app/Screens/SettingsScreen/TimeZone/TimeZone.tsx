@@ -1,191 +1,315 @@
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, StatusBar, Dimensions } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ScrollView } from 'react-native';
-import { Link } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import timeZoneState from '../../../../utils/TimeUntils'; // Adjust path as needed
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from expo vector icons
+
+// Define timezone regions with their data
+const TIMEZONE_REGIONS = [
+    {
+        id: 'india',
+        name: 'India (IST)',
+        timezone: 'Asia/Kolkata',
+        emoji: '🇮🇳',
+        refreshHour: 12
+    },
+    {
+        id: 'usa',
+        name: 'USA (EST)',
+        timezone: 'America/New_York',
+        emoji: '🇺🇸',
+        refreshHour: 12
+    },
+    {
+        id: 'japan',
+        name: 'Japan (JST)',
+        timezone: 'Asia/Tokyo',
+        emoji: '🇯🇵',
+        refreshHour: 12
+    },
+    {
+        id: 'uk',
+        name: 'United Kingdom (GMT/BST)',
+        timezone: 'Europe/London',
+        emoji: '🇬🇧',
+        refreshHour: 12
+    },
+    {
+        id: 'australia',
+        name: 'Australia (AEST)',
+        timezone: 'Australia/Sydney',
+        emoji: '🇦🇺',
+        refreshHour: 12
+    },
+    {
+        id: 'germany',
+        name: 'Germany (CET)',
+        timezone: 'Europe/Berlin',
+        emoji: '🇩🇪',
+        refreshHour: 12
+    }
+];
+
+// Storage key for timezone preferences
+export const REGION_PREFERENCES_KEY = "USER_REGION_PREFERENCE";
 
 const TimeZone = () => {
-    // Use the shared state
-    const [globalTimeZone, setGlobalTimeZone] = timeZoneState.useTimeZone();
-    // Local state for UI selection
-    const [selectedZone, setSelectedZone] = useState(globalTimeZone);
+    const navigation = useNavigation();
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    const [tempSelection, setTempSelection] = useState(null);
+    const screenWidth = Dimensions.get('window').width;
 
-    // Update local state when global state changes
+    // Load saved preference on component mount
     useEffect(() => {
-        setSelectedZone(globalTimeZone);
-    }, [globalTimeZone]);
+        const loadSavedPreference = async () => {
+            try {
+                const stored = await AsyncStorage.getItem(REGION_PREFERENCES_KEY);
+                if (stored) {
+                    const { region } = JSON.parse(stored);
+                    setSelectedRegion(region);
+                    setTempSelection(region);
+                }
+            } catch (error) {
+                console.error("Error loading region preference:", error);
+            }
+        };
 
-    const timeZones = [
-        { id: 'south_asia', name: 'South Asia', icon: 'public' },
-        { id: 'america', name: 'Americas', icon: 'public' },
-        { id: 'europe', name: 'Europe', icon: 'public' },
-        { id: 'west_asia', name: 'West Asia', icon: 'public' },
-        { id: 'east_asia', name: 'East Asia', icon: 'public' },
-    ];
+        loadSavedPreference();
+    }, []);
 
-    const handleSelectZone = (zoneName) => {
-        setSelectedZone(zoneName);
+    // Save preference and navigate back
+    const savePreference = async () => {
+        if (!tempSelection) return;
+
+        try {
+            // Find the region object
+            const regionData = TIMEZONE_REGIONS.find(r => r.id === tempSelection);
+            if (!regionData) return;
+
+            // Save to AsyncStorage
+            await AsyncStorage.setItem(
+                REGION_PREFERENCES_KEY,
+                JSON.stringify({
+                    region: regionData.id,
+                    timezone: regionData.timezone,
+                    refreshHour: regionData.refreshHour
+                })
+            );
+
+            // Update state
+            setSelectedRegion(tempSelection);
+
+            // Go back to previous screen
+            navigation.goBack();
+        } catch (error) {
+            console.error("Error saving region preference:", error);
+        }
     };
 
-    const handleSave = () => {
-        // Update the global state with the selected timezone
-        setGlobalTimeZone(selectedZone);
-        console.log(`Saved timezone: ${selectedZone}`);
-        // Navigate back happens via the Link component
+    // Select timezone (temporary selection)
+    const selectTimezone = (regionId) => {
+        setTempSelection(regionId);
+    };
+
+    // Render a timezone option
+    const renderTimezoneItem = ({ item, index }) => {
+        const isSelected = tempSelection === item.id;
+        const isFirstItem = index === 0;
+        const isLastItem = index === TIMEZONE_REGIONS.length - 1;
+
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.timezoneItem,
+                    isFirstItem && styles.firstItem,
+                    isLastItem && styles.lastItem,
+                    isSelected && styles.selectedItem
+                ]}
+                onPress={() => selectTimezone(item.id)}
+            >
+                <Text style={styles.emoji}>{item.emoji}</Text>
+                <View style={styles.textContainer}>
+                    <Text style={styles.regionName}>{item.name}</Text>
+                </View>
+                {isSelected && (
+                    <View style={styles.checkmark}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                    </View>
+                )}
+            </TouchableOpacity>
+        );
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <Link href=".." asChild>
-                    <TouchableOpacity style={styles.backButton}>
-                        <MaterialIcons name="arrow-back" size={24} color="#fff" />
-                    </TouchableOpacity>
-                </Link>
-                <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>Time Zone</Text>
-                </View>
+            {/* Header Bar with Back Button */}
+            <View style={styles.headerBar}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Time Zone</Text>
+                <View style={styles.placeholder}></View>
             </View>
 
-            <ScrollView style={styles.content}>
-                <Text style={styles.title}>Select your Time Zone</Text>
-
-                <Text style={styles.description}>
-                    To receive your NoCap notification during daytime, select your time zone.
-                    When changing your time zone, all your current NoCap will be deleted.
-                    You can only change time zones once a day.
+            <View style={styles.header}>
+                <Text style={styles.title}>Select Your Timezone</Text>
+                <Text style={styles.subtitle}>
+                    Choose your region to get daily prompts at noon in your local time
                 </Text>
+            </View>
 
-                {/* Time Zone Options */}
-                <View style={styles.optionsContainer}>
-                    {timeZones.map((zone) => (
-                        <TouchableOpacity
-                            key={zone.id}
-                            style={styles.optionItem}
-                            onPress={() => handleSelectZone(zone.name)}
-                        >
-                            <View style={styles.optionContent}>
-                                <View style={styles.iconAndTextContainer}>
-                                    <MaterialIcons name={zone.icon} size={24} color="#fff" />
-                                    <Text style={styles.optionText}>{zone.name}</Text>
-                                </View>
+            <FlatList
+                data={TIMEZONE_REGIONS}
+                renderItem={renderTimezoneItem}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.list}
+            />
 
-                                {selectedZone === zone.name && (
-                                    <MaterialIcons name="check-circle" size={24} color="#fff" />
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </ScrollView>
-
-            {/* Save Button */}
-            <View style={styles.bottomContainer}>
-                <Link href=".." asChild>
-                    <TouchableOpacity
-                        style={styles.saveButton}
-                        onPress={handleSave}
-                    >
-                        <Text style={styles.saveButtonText}>Save</Text>
-                    </TouchableOpacity>
-                </Link>
+            {/* Set Button */}
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.setButton,
+                        !tempSelection && styles.disabledButton
+                    ]}
+                    onPress={savePreference}
+                    disabled={!tempSelection}
+                >
+                    <Text style={styles.buttonText}>Set Timezone</Text>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 };
 
-// Styles remain unchanged
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#000', // Pure black background
+    },
+    headerBar: {
+        height: 60,
         backgroundColor: '#000',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        position: 'relative',
-    },
-    backButton: {
-        padding: 4,
-        position: 'absolute',
-        left: 16,
-        zIndex: 10,
-    },
-    headerTitleContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    description: {
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 30,
-        lineHeight: 22,
-    },
-    optionsContainer: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginBottom: 20,
-    },
-    optionItem: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-    },
-    optionContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        backgroundColor: '#222',
+        paddingHorizontal: 15,
     },
-    iconAndTextContainer: {
+    backButton: {
+        padding: 8,
+    },
+    headerTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    placeholder: {
+        width: 40, // Same width as back button for proper centering
+    },
+    header: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333', // Darker border color for dark theme
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        color: '#fff', // White text for dark theme
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#aaa', // Light gray text for dark theme
+        lineHeight: 22,
+    },
+    list: {
+        padding: 10,
+        width: '100%',
+        paddingBottom: 90, // Extra padding for button at bottom
+    },
+    timezoneItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 12, // Shorter card height
+        paddingHorizontal: 15,
+        backgroundColor: '#222', // Dark gray cards
+        borderRadius: 0, // No border radius by default
+        marginBottom: 1, // Minimal gap between items
+        width: '100%', // Full screen width cards
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0, // Removed elevation
     },
-    optionText: {
-        color: '#fff',
+    firstItem: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    lastItem: {
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+    },
+    selectedItem: {
+        backgroundColor: '#333', // Darker gray for selected item
+        borderColor: '#444',
+        borderWidth: 1,
+    },
+    emoji: {
+        fontSize: 24, // Slightly smaller emoji
+        marginRight: 12,
+    },
+    textContainer: {
+        flex: 1,
+    },
+    regionName: {
         fontSize: 16,
-        marginLeft: 16,
+        fontWeight: '600',
+        color: '#fff', // White text for dark theme
     },
-    bottomContainer: {
+    checkmark: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: '#444', // Dark gray checkmark
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkmarkText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    buttonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         padding: 20,
-        paddingBottom: 30,
+        backgroundColor: '#000',
+        borderTopWidth: 1,
+        borderTopColor: '#222',
     },
-    saveButton: {
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        paddingVertical: 15,
+    setButton: {
+        backgroundColor: '#333',
+        paddingVertical: 16,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    saveButtonText: {
-        color: '#444',
-        fontSize: 16,
-        fontWeight: '600',
+    disabledButton: {
+        backgroundColor: '#222',
+        opacity: 0.5,
     },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
 
 export default TimeZone;

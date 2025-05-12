@@ -18,15 +18,42 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
     const [session, setSession] = useState<Session | null>(null);
+
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        // Get initial session with proper error handling
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error) {
+                console.error('Error getting initial session:', error);
+                // Don't set session if there's an error
+                return;
+            }
             setSession(session);
         });
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
+        // Listen for auth changes with specific event handling
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event);
+
+            // Handle different auth events
+            if (event === 'SIGNED_OUT') {
+                setSession(null);
+                console.log('User signed out, clearing session');
+            } else if (event === 'SIGNED_IN') {
+                setSession(session);
+                console.log('User signed in, updating session');
+            } else if (event === 'TOKEN_REFRESHED') {
+                setSession(session);
+                console.log('Token refreshed, updating session');
+            } else if (event === 'USER_UPDATED') {
+                setSession(session);
+                console.log('User updated, updating session');
+            } else {
+                // For any other events, just update the session if we have one
+                if (session) {
+                    setSession(session);
+                    console.log('Other auth event, updating session');
+                }
+            }
         });
 
         return () => subscription.unsubscribe();

@@ -15,6 +15,7 @@ const TextContent = ({ textContent }: TextContentProps) => {
 
 const styles = StyleSheet.create({
     textContainer: {
+        flex: 1,
         padding: 16,
         backgroundColor: '#000',
     },

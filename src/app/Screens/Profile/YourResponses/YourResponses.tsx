@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { Feather, Ionicons, AntDesign } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { supabase } from '../../../../../lib/supabase';
 import { styles } from './styles'

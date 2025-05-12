@@ -100,11 +100,11 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                         </TouchableOpacity>
                     </Link>
                     <View style={styles.headerInfo}>
-                        <Link href={`/Screens/user/users?id=${item.user.id}}`} asChild>
-                            <TouchableOpacity>
-                                <Text style={styles.username}>{item.user.username}</Text>
-                            </TouchableOpacity>
-                        </Link>
+                        {/* <Link href={`/Screens/user/users?id=${item.user.id}}`} asChild> */}
+                        <TouchableOpacity>
+                            <Text style={styles.username}>{item.user.username}</Text>
+                        </TouchableOpacity>
+                        {/* </Link> */}
                     </View>
                 </View>
 

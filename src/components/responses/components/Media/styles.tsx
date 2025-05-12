@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
         marginBottom: 16,
         borderRadius: 24,
         overflow: 'hidden',
-        height: 550,
+        height: 650,
     },
     mediaContainer: {
         width: '100%',

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,11 +7,13 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
-    Alert
+    Alert,
+    BackHandler,
+    Platform
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useLocalSearchParams, router } from 'expo-router';
+import { Link, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 
 // Import hooks and components
 import YourResponses from '../Profile/YourResponses';
@@ -22,9 +24,11 @@ import { useUserProfile } from './hook/useUserProfile';
 import { useFriendshipStatus } from './hook/useFriendshipStatus';
 import CurseButton from '../../../components/CurseButton';
 import UserActionsModal from './UserActionsModal';
-import { supabase } from '../../../../lib/supabase';
-
 import { UserInfo, useUserInfo } from './hook/useUserInfo';
+import NavigationHandler from './NavigationHandler'; // Import the NavigationHandler
+
+// Import blockedUsers functions
+import { getBlockedUsers, unblockUser } from '../../../../API/blockedUsers';
 
 export default function UserProfile() {
     const { id } = useLocalSearchParams();
@@ -57,6 +61,42 @@ export default function UserProfile() {
     } = useFriendshipStatus(userData?.id || null, friends);
 
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
+    const [isUserBlocked, setIsUserBlocked] = useState(false);
+    const [loadingBlockStatus, setLoadingBlockStatus] = useState(true);
+
+    // Fetch blocked users and check if current profile user is blocked
+    useEffect(() => {
+        async function checkIfUserIsBlocked() {
+            if (!userData?.id) return;
+
+            try {
+                setLoadingBlockStatus(true);
+                const blockedUsers = await getBlockedUsers();
+                const isBlocked = blockedUsers.some(user => user.blocked_id === userData.id);
+                setIsUserBlocked(isBlocked);
+            } catch (error) {
+                console.error('Error checking blocked status:', error);
+            } finally {
+                setLoadingBlockStatus(false);
+            }
+        }
+
+        checkIfUserIsBlocked();
+    }, [userData?.id]);
+
+    // Handle unblocking a user
+    const handleUnblockUser = useCallback(async () => {
+        if (!userData?.id) return;
+
+        try {
+            await unblockUser(userData.id);
+            setIsUserBlocked(false);
+            Alert.alert('Success', `${userData.username} has been unblocked`);
+        } catch (error) {
+            console.error('Failed to unblock user:', error);
+            Alert.alert('Error', 'Failed to unblock this user');
+        }
+    }, [userData]);
 
     // Memoized unfriend handler
     const handleUnfriend = useCallback(async () => {
@@ -71,13 +111,70 @@ export default function UserProfile() {
         }
     }, [userData, removeFriend, refreshFriendRequests]);
 
-    // Memoized go back handler
+    // Fixed go back handler that properly returns to the friends tab
     const handleGoBack = useCallback(() => {
-        router.back();
+        // Navigate directly to the friends tab instead of using router.back()
+        router.replace("/(tabs)/friends");
     }, []);
+
+    // Handle hardware back button and gestures
+    useFocusEffect(
+        useCallback(() => {
+            // For Android hardware back button
+            const onBackPress = () => {
+                router.replace("/(tabs)/friends");
+                return true; // Prevents default behavior
+            };
+
+            // Add back button listener for Android
+            if (Platform.OS === 'android') {
+                BackHandler.addEventListener('hardwareBackPress', onBackPress);
+            }
+
+            // For iOS, we need to handle the swipe gesture differently
+            // This is handled by customizing the screenOptions in the navigator
+            // but we're capturing hardware back button here
+
+            return () => {
+                if (Platform.OS === 'android') {
+                    BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+                }
+            };
+        }, [])
+    );
 
     // Memoize friend button props to avoid unnecessary re-renders
     const friendButtonProps = useMemo(() => {
+        // If user is blocked, show unblock button with transparent background and white border
+        if (isUserBlocked) {
+            return {
+                buttonStyle: {
+                    backgroundColor: 'transparent',
+                    padding: 15,
+                    borderRadius: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginVertical: 20,
+                    marginHorizontal: 16,
+                    width: '90%',
+                    alignSelf: 'center',
+                    flexDirection: 'row',
+                    borderWidth: 0.5,
+                    borderColor: 'white',
+                },
+                textStyle: {
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: 16
+                },
+                buttonText: 'Unblock this user',
+                onPressAction: handleUnblockUser,
+                isDisabled: false,
+                icon: 'person-remove-outline'
+            };
+        }
+
+        // Regular friend button logic
         const buttonStyle = {
             backgroundColor: receivedRequest ? '#fff' : (requestPending ? '#cccccc' : '#fff'),
             padding: 15,
@@ -107,11 +204,15 @@ export default function UserProfile() {
 
         const isDisabled = requestPending && !receivedRequest;
 
-        return { buttonStyle, textStyle, buttonText, onPressAction, isDisabled };
-    }, [receivedRequest, requestPending, acceptFriendRequest, sendFriendRequest]);
+        const icon = receivedRequest
+            ? 'checkmark-circle-outline'
+            : (requestPending ? undefined : 'person-add-outline');
+
+        return { buttonStyle, textStyle, buttonText, onPressAction, isDisabled, icon };
+    }, [receivedRequest, requestPending, acceptFriendRequest, sendFriendRequest, isUserBlocked, handleUnblockUser]);
 
     // Show loading indicator while data is being fetched
-    if (userLoading || friendsLoading || userInfoLoading) {
+    if (userLoading || friendsLoading || userInfoLoading || loadingBlockStatus) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="large" color="#ffffff" />
@@ -133,6 +234,8 @@ export default function UserProfile() {
 
     return (
         <View style={styles.container}>
+            {/* Add NavigationHandler to handle iOS swipe gestures */}
+            <NavigationHandler sourceTab="friends" />
             <StatusBar barStyle="light-content" />
 
             {/* Navbar */}
@@ -230,8 +333,8 @@ export default function UserProfile() {
                     </LinearGradient>
                 </View>
 
-                {/* Conditionally render Message Button ONLY if NOT owner AND IS a friend */}
-                {!isOwner && isFriend && (
+                {/* Conditionally render Message Button ONLY if NOT owner AND IS a friend AND NOT blocked */}
+                {!isOwner && isFriend && !isUserBlocked && (
                     <CurseButton
                         receiverId={userData.id}
                         username={userData.username}
@@ -239,8 +342,8 @@ export default function UserProfile() {
                     />
                 )}
 
-                {/* Conditionally render Add/Accept Friend button ONLY if NOT owner AND NOT a friend */}
-                {!isOwner && !isFriend && (
+                {/* Conditionally render Add/Accept Friend button OR Unblock button */}
+                {!isOwner && (!isFriend || isUserBlocked) && (
                     <TouchableOpacity
                         style={friendButtonProps.buttonStyle}
                         onPress={friendButtonProps.onPressAction}
@@ -253,28 +356,19 @@ export default function UserProfile() {
                             {friendButtonProps.buttonText}
                         </Text>
 
-                        {receivedRequest && (
+                        {friendButtonProps.icon && (
                             <Ionicons
-                                name="checkmark-circle-outline"
+                                name={friendButtonProps.icon}
                                 size={20}
-                                color="black"
-                                style={{ marginLeft: 10 }}
-                            />
-                        )}
-
-                        {!requestPending && !receivedRequest && (
-                            <Ionicons
-                                name="person-add-outline"
-                                size={20}
-                                color="black"
+                                color={isUserBlocked ? "white" : "black"}
                                 style={{ marginLeft: 10 }}
                             />
                         )}
                     </TouchableOpacity>
                 )}
 
-                {/* User's Responses Component - only visible to profile owner or friends */}
-                {(isOwner || isFriend) && (
+                {/* User's Responses Component - only visible to profile owner or friends and not blocked */}
+                {(isOwner || (isFriend && !isUserBlocked)) && (
                     <View style={{ marginTop: -10 }}>
                         <YourResponses userId={userData.id} />
                     </View>
@@ -291,6 +385,8 @@ export default function UserProfile() {
                     onUnfriend={handleUnfriend}
                     isFriend={isFriend}
                     joinDate={joinDate}
+                    isBlocked={isUserBlocked}
+                    onUnblock={handleUnblockUser}
                 />
             )}
         </View>

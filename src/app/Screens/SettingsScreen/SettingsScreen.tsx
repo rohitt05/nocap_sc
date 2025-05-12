@@ -7,6 +7,7 @@ import timeZoneState from '../../../utils/TimeUntils'; // Adjust path as needed
 import { styles } from './styles';
 import { supabase } from '../../../../lib/supabase'; // Adjust path as needed
 
+
 const SettingsScreen = () => {
     // Use the shared state
     const [currentTimeZone] = timeZoneState.useTimeZone();
@@ -56,6 +57,11 @@ const SettingsScreen = () => {
         }
     };
 
+    // Handle back button press
+    const handleGoBack = () => {
+        router.back();
+    };
+
     // Sign out function
     const handleSignOut = async () => {
         try {
@@ -103,7 +109,11 @@ const SettingsScreen = () => {
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={handleGoBack}
+                    activeOpacity={0.7}
+                >
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Settings</Text>
@@ -129,10 +139,10 @@ const SettingsScreen = () => {
                         <Text style={styles.profileUsername}>@{userData.username}</Text>
                     </View>
                 </TouchableOpacity>
-
+                
                 {/* Features Section */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>FEATURES</Text>
+                    <Text style={styles.sectionTitle}>TIMELINE</Text>
 
                     <View style={styles.menuContainer}>
                         <Link href='(tabs)/archives' asChild>
@@ -149,10 +159,10 @@ const SettingsScreen = () => {
                     <Text style={styles.sectionTitle}>SETTINGS</Text>
 
                     <View style={styles.menuContainer}>
-                        <Link href='/Screens/SettingsScreen/Notifications' asChild>
+                        <Link href='/Screens/SettingsScreen/TimeZone' asChild>
                             <TouchableOpacity style={styles.menuItem}>
-                                <Ionicons name="notifications" size={24} color="white" style={styles.menuIcon} />
-                                <Text style={styles.menuText}>Notifications</Text>
+                                <Ionicons name="globe-outline" size={24} color="white" style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Time Zone</Text>
                             </TouchableOpacity>
                         </Link>
                         <Link href='/Screens/SettingsScreen/Privacy' asChild>
@@ -161,14 +171,10 @@ const SettingsScreen = () => {
                                 <Text style={styles.menuText}>Privacy</Text>
                             </TouchableOpacity>
                         </Link>
-                        <Link href='/Screens/SettingsScreen/TimeZone' asChild>
+                        <Link href='/Screens/SettingsScreen/HowItWorks' asChild>
                             <TouchableOpacity style={styles.menuItem}>
-                                <Ionicons name="time" size={24} color="white" style={styles.menuIcon} />
-                                <Text style={styles.menuText}>Time Zone</Text>
-                                <View style={styles.rightContainer}>
-                                    <Text style={styles.rightText}>{currentTimeZone}</Text>
-                                    <Feather name="globe" size={24} color="white" style={styles.rightIcon} />
-                                </View>
+                                <Ionicons name="information" size={24} color="white" style={styles.menuIcon} />
+                                <Text style={styles.menuText}>How it works</Text>
                             </TouchableOpacity>
                         </Link>
                     </View>

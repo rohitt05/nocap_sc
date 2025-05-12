@@ -19,14 +19,14 @@ export default function OnboardingScreen({ onGetStarted }) {
                     resizeMode="contain"
                 />
                 <View style={styles.textContainer}>
-                    <Text style={styles.taglinePrimary}>Unfiltered, unedited, undeniable.</Text>
+                    <Text style={styles.taglinePrimary}>The Internet's Chillest Corner. 🧊</Text>
                    
                 </View>
                 <TouchableOpacity
                     style={styles.getStartedButton}
                     onPress={onGetStarted}
                 >
-                    <Text style={styles.buttonText}>i swear, i'd never lie!</Text>
+                    <Text style={styles.buttonText}>Hop In</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -63,10 +63,11 @@ const styles = StyleSheet.create({
     },
  
     getStartedButton: {
-        backgroundColor: 'rgba(255,255,255,0.1)', // Slightly increased opacity
+        borderWidth: 1,
+        borderColor: 'white',
         paddingVertical: 15,
         paddingHorizontal: 25,
-        borderRadius: 30,
+        borderRadius: 20,
         position: 'absolute',
         bottom: 50,
         right: 20,

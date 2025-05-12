@@ -1,1 +1,0 @@
-export { default as newchats } from './newchats';

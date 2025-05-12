@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
         marginVertical: 5,
     },
     scrollViewContent: {
-        padding: 10,
+        padding: 1,
         minHeight: '100%',
     },
     errorText: {

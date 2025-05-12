@@ -100,7 +100,7 @@ export const useFriendResponses = () => {
                 avatar_url: response.users.avatar_url,
                 response_id: response.id,
                 prompt_id: response.prompt_id,
-                prompt_text: response.prompts.text,
+                prompt_text: response.prompts?.text || "prompt",
                 content_type: response.content_type,
                 created_at: response.created_at,
                 type: 'friend_response'

@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
     },
     profileImageContainer: {
         position: 'relative',
-        height: 450,
+        height: 500,
         width: '100%',
     },
     profileImage: {

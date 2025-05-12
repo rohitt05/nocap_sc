@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, StatusBar, SafeAreaView } from 'react-native';
-import { Link } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    Switch,
+    ScrollView,
+    StatusBar,
+    SafeAreaView,
+} from 'react-native';
+import { Link, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import PhoneNumberInput from './PhoneNumber'; // Import our new component
+import DeleteAccount from './DeleteAccount'; // Import the DeleteAccount component
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define types for props
 interface PrivacyOptionProps {
@@ -16,10 +28,82 @@ interface PrivacyOptionProps {
     learnMoreLink?: boolean;
 }
 
+const CONTACT_SYNC_KEY = 'contactSyncEnabled';
+const FIND_BY_PHONE_KEY = 'findByPhoneEnabled';
+const PHONE_NUMBER_UPLOADED_KEY = 'phoneNumberUploaded';
+
 const Privacy = () => {
-    const [connectFriends, setConnectFriends] = useState(true);
-    const [findByPhone, setFindByPhone] = useState(true);
-    const [contactSync, setContactSync] = useState(true);
+    const [findByPhone, setFindByPhone] = useState(false);
+    const [phoneNumberUploaded, setPhoneNumberUploaded] = useState(false);
+    // Initialize contact sync to false as requested
+    const [contactSync, setContactSync] = useState(false);
+
+    // Load preferences when the component mounts
+    useEffect(() => {
+        const loadPreferences = async () => {
+            try {
+                // Load contact sync preference
+                const syncValue = await AsyncStorage.getItem(CONTACT_SYNC_KEY);
+                if (syncValue !== null) {
+                    setContactSync(syncValue === 'true');
+                }
+
+                // Load find by phone preference
+                const phoneValue = await AsyncStorage.getItem(FIND_BY_PHONE_KEY);
+                if (phoneValue !== null) {
+                    setFindByPhone(phoneValue === 'true');
+                }
+
+                // Check if phone number was ever uploaded
+                const phoneUploaded = await AsyncStorage.getItem(PHONE_NUMBER_UPLOADED_KEY);
+                if (phoneUploaded === 'true') {
+                    setPhoneNumberUploaded(true);
+                }
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+            }
+        };
+
+        loadPreferences();
+    }, []);
+
+    const navigateToBlockedUsers = () => {
+        router.push('/Screens/SettingsScreen/BlockedUsers');
+    };
+
+    // Handle contact sync toggle with AsyncStorage persistence
+    const handleContactSyncToggle = async () => {
+        const newValue = !contactSync;
+        setContactSync(newValue);
+
+        try {
+            await AsyncStorage.setItem(CONTACT_SYNC_KEY, newValue.toString());
+        } catch (error) {
+            console.error('Error saving contact sync preference:', error);
+        }
+    };
+
+    // Handle find by phone toggle with special logic
+    const handleFindByPhoneToggle = async () => {
+        // If phone number was previously uploaded and setting is currently true,
+        // allow toggling off
+        if (findByPhone) {
+            setFindByPhone(false);
+            await AsyncStorage.setItem(FIND_BY_PHONE_KEY, 'false');
+            return;
+        }
+
+        // Otherwise toggle it on
+        setFindByPhone(true);
+        await AsyncStorage.setItem(FIND_BY_PHONE_KEY, 'true');
+    };
+
+    // This function will be called when a phone number is successfully uploaded
+    const onPhoneNumberUploaded = async () => {
+        // Mark that a phone number has been uploaded
+        setPhoneNumberUploaded(true);
+        await AsyncStorage.setItem(PHONE_NUMBER_UPLOADED_KEY, 'true');
+    };
 
     // Option item component
     const PrivacyOption = ({
@@ -104,14 +188,7 @@ const Privacy = () => {
                 <PrivacyOption
                     iconName="block"
                     title="Blocked Users"
-                    href="/blocked-users"
-                />
-
-                {/* Hidden Users */}
-                <PrivacyOption
-                    iconName="visibility-off"
-                    title="Hidden Users"
-                    href="/hidden-users"
+                    onPress={navigateToBlockedUsers}
                 />
 
                 {/* Find me by my phone number */}
@@ -122,8 +199,11 @@ const Privacy = () => {
                     learnMoreLink
                     isToggle
                     toggleValue={findByPhone}
-                    onToggleChange={() => setFindByPhone(!findByPhone)}
+                    onToggleChange={handleFindByPhoneToggle}
                 />
+
+                {/* Conditionally render the PhoneNumberInput component */}
+                {findByPhone && <PhoneNumberInput onPhoneNumberUploaded={onPhoneNumberUploaded} />}
 
                 {/* Contact sync */}
                 <PrivacyOption
@@ -133,8 +213,11 @@ const Privacy = () => {
                     learnMoreLink
                     isToggle
                     toggleValue={contactSync}
-                    onToggleChange={() => setContactSync(!contactSync)}
+                    onToggleChange={handleContactSyncToggle}
                 />
+
+                {/* Delete Account */}
+                <DeleteAccount />
             </ScrollView>
         </SafeAreaView>
     );
@@ -169,6 +252,20 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+    },
+    sectionContainer: {
+        backgroundColor: '#1a1a1a',
+        marginHorizontal: 16,
+        marginVertical: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+        padding: 16,
+    },
+    sectionTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
     },
     optionContainer: {
         backgroundColor: '#1a1a1a',

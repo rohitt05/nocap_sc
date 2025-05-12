@@ -77,6 +77,18 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         }
     };
+    const handleSessionRefresh = async () => {
+        try {
+            const { data, error } = await supabase.auth.refreshSession();
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Session refresh error:', error);
+            // If refresh fails, sign the user out to prevent repeated failures
+            await supabase.auth.signOut();
+            return { success: false, error: error.message };
+        }
+    };
 
     return (
         <AuthContext.Provider
@@ -84,6 +96,7 @@ export const AuthProvider = ({ children }) => {
                 signInWithEmail,
                 signUpWithEmail,
                 resetPassword,
+                handleSessionRefresh,
                 loading
             }}
         >

@@ -2,15 +2,17 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
+        backgroundColor: '#fff',
         position: 'absolute',
-        bottom: 45,
+        bottom: 65,
         left: 110,
         zIndex: 100,
+        borderRadius: 20,
     },
     pickerContainer: {
         flexDirection: 'row',
         padding: 8,
-        backgroundColor: 'transparent', // Ensure no background
+        // backgroundColor: 'transparent', // Ensure no background
     },
     reactionButton: {
         width: 40,
@@ -19,15 +21,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginHorizontal: 4,
-        // Enhanced shadow to highlight emojis
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3,
-        elevation: 5, // For Android shadow
+       
     },
     emojiText: {
         fontSize: 20,

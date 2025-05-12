@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, Animated, Dimensions } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, Linking } from 'react-native';
+import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 
 interface DropdownItemProps {
@@ -18,11 +18,9 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
-    const screenHeight = Dimensions.get('window').height;
 
     const toggleDropdown = () => {
         setIsExpanded(!isExpanded);
-        // Reset scroll position when closing
         if (isExpanded && scrollViewRef.current) {
             scrollViewRef.current.scrollTo({ y: 0, animated: false });
         }
@@ -33,6 +31,7 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
             <TouchableOpacity
                 style={styles.optionItem}
                 onPress={toggleDropdown}
+                activeOpacity={0.7}
             >
                 <View style={styles.iconContainer}>
                     {icon}
@@ -52,7 +51,6 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
                         ref={scrollViewRef}
                         style={styles.dropdownScrollView}
                         contentContainerStyle={styles.dropdownScrollViewContent}
-                        showsVerticalScrollIndicator={true}
                     >
                         <Text style={styles.dropdownText}>{children}</Text>
                     </ScrollView>
@@ -63,6 +61,10 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
 };
 
 const About = () => {
+    const handleExternalLink = (url: string) => {
+        Linking.openURL(url);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -77,12 +79,11 @@ const About = () => {
                 <View style={styles.headerTitleContainer}>
                     <Text style={styles.headerTitle}>About</Text>
                 </View>
-                {/* Empty view for centering the title */}
                 <View style={styles.backButton} />
             </View>
 
-            <ScrollView style={styles.content}>
-                {/* App Info */}
+            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+                {/* App Version */}
                 <DropdownItem
                     icon={<Ionicons name="information-circle-outline" size={24} color="white" />}
                     title="App Version"
@@ -99,85 +100,36 @@ Our commitment is to continuously improve and enhance your experience with regul
                 </DropdownItem>
 
                 {/* Terms of Service */}
-                <DropdownItem
-                    icon={<MaterialIcons name="description" size={24} color="white" />}
-                    title="Terms of Service"
-                >
-                    {`Terms of Service Highlights:
-
-1. Acceptance of Terms
-• By using this app, you agree to these terms
-• Terms may be updated periodically
-• Continued use implies acceptance of changes
-
-2. User Responsibilities
-• Comply with local and international laws
-• Protect your account credentials
-• Use the app ethically and responsibly
-
-3. Intellectual Property
-• All app content is proprietary
-• No unauthorized reproduction
-• Trademarks and copyrights reserved
-
-4. Limitation of Liability
-• App provided "as is" without warranties
-• No guarantee of uninterrupted service
-• Limited liability for direct/indirect damages
-
-5. Account Termination
-• We reserve the right to terminate accounts
-• Violation of terms may result in suspension
-• Users can discontinue app usage anytime`}
-                </DropdownItem>
+                <View style={styles.linkContainer}>
+                    <TouchableOpacity
+                        style={styles.linkItem}
+                        onPress={() => handleExternalLink('https://noocap.netlify.app/terms')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.linkContent}>
+                            <MaterialIcons name="description" size={24} color="#fff" />
+                            <Text style={styles.linkText}>Terms of Service</Text>
+                        </View>
+                        <Feather name="external-link" size={20} color="#666" />
+                    </TouchableOpacity>
+                </View>
 
                 {/* Privacy Policy */}
-                <DropdownItem
-                    icon={<MaterialIcons name="privacy-tip" size={24} color="white" />}
-                    title="Privacy Policy"
-                >
-                    {`Privacy Permissions and Data Usage
+                <View style={styles.linkContainer}>
+                    <TouchableOpacity
+                        style={styles.linkItem}
+                        onPress={() => handleExternalLink('https://noocap.netlify.app/privacy')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.linkContent}>
+                            <MaterialIcons name="privacy-tip" size={24} color="#fff" />
+                            <Text style={styles.linkText}>Privacy Policy</Text>
+                        </View>
+                        <Feather name="external-link" size={20} color="#666" />
+                    </TouchableOpacity>
+                </View>
 
-1. Camera Permission
-• Purpose: Photo capture and document scanning
-• Activated only during explicit camera use
-• Can be revoked at any time in settings
-
-2. Microphone Permission
-• Enables voice commands and recording
-• Strictly opt-in functionality
-• Never accessed without direct user interaction
-
-3. Location Services
-• Optional precise or approximate location
-• Used for personalized recommendations
-• No permanent location data storage
-• Full user control and transparency
-
-4. Storage Access
-• Limited to app-specific directories
-• File saving and content download
-• No unrestricted device storage access
-
-5. Contacts Integration
-• Completely voluntary feature
-• No automatic contact uploads
-• User-controlled sharing mechanisms
-
-6. Notification Preferences
-• Important updates and personalized alerts
-• Fully customizable settings
-• One-tap disable option
-
-Data Protection Commitments:
-• Zero data selling policy
-• Minimal information collection
-• End-to-end encryption
-• Regular security audits
-• 100% Transparent data handling`}
-                </DropdownItem>
-
-                {/* Licenses */}
+                {/* Open Source Licenses */}
                 <DropdownItem
                     icon={<MaterialIcons name="gavel" size={24} color="white" />}
                     title="Open Source Licenses"
@@ -251,15 +203,20 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginTop: 20,
     },
+    contentContainer: {
+        paddingBottom: 40,
+    },
     dropdownContainer: {
         marginBottom: 16,
+        backgroundColor: '#1C1C1E',
+        borderRadius: 12,
+        overflow: 'hidden',
     },
     optionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#222',
-        borderRadius: 10,
-        padding: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
     },
     iconContainer: {
         marginRight: 16,
@@ -271,15 +228,14 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     versionText: {
-        color: '#666',
+        color: '#8E8E93',
         fontSize: 14,
-        marginRight: 10,
+        marginRight: 12,
     },
     dropdownContent: {
         backgroundColor: '#000',
-        borderBottomLeftRadius: 10,
-        borderBottomRightRadius: 10,
-        maxHeight: 300, // Set a max height
+        paddingHorizontal: 20,
+        paddingBottom: 16,
     },
     dropdownScrollView: {
         paddingHorizontal: 16,
@@ -288,10 +244,33 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     dropdownText: {
-        color: 'white',
+        color: '#E5E5EA',
         fontSize: 14,
-        lineHeight: 24,
-    }
+        lineHeight: 22,
+    },
+    linkContainer: {
+        marginBottom: 16,
+        backgroundColor: '#1C1C1E',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    linkItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+    },
+    linkContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    linkText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
+    },
 });
 
 export default About;

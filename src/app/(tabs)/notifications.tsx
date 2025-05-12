@@ -29,10 +29,6 @@ const Notifications = () => {
         setTimeout(() => {
             // Reset the refresh state
             setRefreshing(false);
-
-            // You might want to add logic to reload notifications or update data
-            // For example, you could pass a refresh function to child components
-            // or use a state management solution like Redux or Context
         }, 1000); // Simulated 1-second refresh
     }, []);
 

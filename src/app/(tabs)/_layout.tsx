@@ -1,30 +1,47 @@
-// app/(tabs)/_layout.js
 import { Tabs } from "expo-router";
 import { Entypo, Ionicons, FontAwesome } from "@expo/vector-icons";
 import { HomeHeader, StandardHeader } from "../../components/Header/Header";
-import React from "react";
-import { Animated } from "react-native";
-
+import React, { useState, useEffect } from "react";
+import { Animated, Keyboard, Platform } from "react-native";
 
 export default function TabLayout() {
-    // Common tab screen options
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+    // Common tab screen options 
     const getCommonScreenOptions = (title: string) => ({
         headerTitle: () => <StandardHeader title={title} />,
         title: title.toLowerCase(),
         headerTintColor: 'white',
     });
 
+    useEffect(() => {
+        // Keyboard listeners
+        const keyboardWillShowListener = Platform.OS === 'ios'
+            ? Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true))
+            : Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+
+        const keyboardWillHideListener = Platform.OS === 'ios'
+            ? Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false))
+            : Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+
+        // Cleanup
+        return () => {
+            keyboardWillShowListener.remove();
+            keyboardWillHideListener.remove();
+        };
+    }, []);
+
     return (
-       
         <Tabs
             screenOptions={{
                 tabBarStyle: {
                     backgroundColor: 'black',
-                    borderTopWidth: 0, // Remove the white border line
+                    borderTopWidth: 0,
+                    display: keyboardVisible ? 'none' : 'flex', // Hide tab bar when keyboard is visible
                 },
                 tabBarActiveTintColor: 'white',
                 tabBarInactiveTintColor: 'gray',
-                tabBarShowLabel: true, // You can set this to false if you don't want text labels
+                tabBarShowLabel: true,
                 headerStyle: {
                     backgroundColor: 'black',
                     height: 60,

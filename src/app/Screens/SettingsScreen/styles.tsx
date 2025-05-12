@@ -125,4 +125,69 @@ export const styles = StyleSheet.create({
     bottomSpacer: {
         height: 50,
     },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        backgroundColor: '#1c1c1c',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        minHeight: 300,
+    },
+    modalTitle: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: '600',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    dateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        backgroundColor: '#2a2a2a',
+        borderRadius: 10,
+        marginBottom: 20,
+    },
+    dateText: {
+        color: '#fff',
+        marginLeft: 10,
+        fontSize: 16,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    modalButton: {
+        flex: 1,
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginHorizontal: 5,
+    },
+    cancelButton: {
+        backgroundColor: '#444',
+    },
+    saveButton: {
+        backgroundColor: '#4CAF50',
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    addButton: {
+        position: 'absolute',
+        right: 16,
+        alignSelf: 'center',
+    },
+    birthdayText: {
+        color: '#888',
+        fontSize: 14,
+        marginTop: 4,
+    },
 });

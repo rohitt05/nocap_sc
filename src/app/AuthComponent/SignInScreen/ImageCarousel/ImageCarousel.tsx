@@ -3,9 +3,12 @@ import {
     View,
     Dimensions,
     StyleSheet,
-
+    // Use React Native's Image component as a fallback
+    Image as RNImage
 } from 'react-native';
-import { Image } from 'expo-image';
+// Try using React Native's built-in Image component instead of expo-image
+// If you need to use expo-image, ensure it's properly installed with:
+// npx expo install expo-image
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -67,7 +70,7 @@ export default function SignInCarousel({
         // After animation, reset and update indices
         setTimeout(() => {
             setCurrentImageIndex(prevIndex => (prevIndex + 1) % signInImages.length);
-            setNextImageIndex(prevIndex => (prevIndex + 2) % signInImages.length);
+            setNextImageIndex(prevIndex => (prevIndex + 1) % signInImages.length);
             transitionProgress.value = 0;
         }, fadeDuration);
     }, [fadeDuration]);
@@ -82,7 +85,7 @@ export default function SignInCarousel({
         <View style={styles.container}>
             {/* Current Image */}
             <Animated.View style={currentImageStyle}>
-                <Image
+                <RNImage
                     source={signInImages[currentImageIndex]}
                     style={styles.image}
                     resizeMode="cover"
@@ -92,7 +95,7 @@ export default function SignInCarousel({
 
             {/* Next Image */}
             <Animated.View style={nextImageStyle}>
-                <Image
+                <RNImage
                     source={signInImages[nextImageIndex]}
                     style={styles.image}
                     resizeMode="cover"
@@ -102,7 +105,7 @@ export default function SignInCarousel({
 
             {/* Fixed Logo */}
             <View style={styles.logoContainer}>
-                <Image
+                <RNImage
                     source={logo}
                     style={styles.logo}
                     resizeMode="contain"

@@ -1,6 +1,9 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Alert, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useReportUserProfiles } from '../../../../../API/useReportUserProfiles';
+import ReportUserModal from './ReportUserModal';
+import BlockUser from './BlockUser';
 
 interface UserActionsModalProps {
     isVisible: boolean;
@@ -10,6 +13,9 @@ interface UserActionsModalProps {
     onUnfriend: () => void;
     isFriend: boolean;
     joinDate: string | null;
+    // Add new props for blocked status
+    isBlocked?: boolean;
+    onUnblock?: () => Promise<void>;
 }
 
 const UserActionsModal: React.FC<UserActionsModalProps> = ({
@@ -19,8 +25,27 @@ const UserActionsModal: React.FC<UserActionsModalProps> = ({
     username,
     onUnfriend,
     isFriend,
-    joinDate
+    joinDate,
+    isBlocked = false,
+    onUnblock
 }) => {
+    // Use the report hook
+    const {
+        openReportModal,
+        closeReportModal,
+        handleSubmitReport,
+        isModalVisible,
+        currentUsername,
+        isLoading
+    } = useReportUserProfiles({
+        onSuccess: () => {
+            Alert.alert('Report Submitted', 'Thank you for your report. Our team will review it shortly.');
+        },
+        onError: (error) => {
+            Alert.alert('Error', error.message);
+        }
+    });
+
     // Pan responder for swipe down to close
     const panResponder = useRef(
         PanResponder.create({
@@ -57,50 +82,123 @@ const UserActionsModal: React.FC<UserActionsModalProps> = ({
         );
     }, [onUnfriend, onClose, username]);
 
+    // Handle unblock user
+    const handleUnblockUser = useCallback(() => {
+        if (!onUnblock) return;
+
+        Alert.alert(
+            'Unblock User',
+            `Are you sure you want to unblock ${username}?`,
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Unblock',
+                    style: 'default',
+                    onPress: async () => {
+                        try {
+                            await onUnblock();
+                            onClose();
+                        } catch (error) {
+                            console.error('Failed to unblock user:', error);
+                            Alert.alert('Error', 'Failed to unblock this user');
+                        }
+                    }
+                }
+            ]
+        );
+    }, [onUnblock, onClose, username]);
+
+    // Handle user report
+    const handleReportUser = useCallback(() => {
+        onClose(); // Close the actions modal first
+        openReportModal(userId, username); // Then open the report modal
+    }, [userId, username, openReportModal, onClose]);
+
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isVisible}
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <View
-                    style={styles.modalContainer}
-                    {...panResponder.panHandlers}
-                >
-                    {/* Modal indicator */}
-                    <View style={styles.modalIndicator} />
+        <>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={isVisible}
+                onRequestClose={onClose}
+            >
+                <View style={styles.modalOverlay}>
+                    <View
+                        style={styles.modalContainer}
+                        {...panResponder.panHandlers}
+                    >
+                        {/* Modal indicator */}
+                        <View style={styles.modalIndicator} />
 
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{username}</Text>
-                    </View>
-
-                    {/* User Info section */}
-                    <TouchableOpacity style={styles.actionButton}>
-                        <View style={styles.iconContainer}>
-                            <Ionicons name="information-circle" size={24} color="#fff" />
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{username}</Text>
                         </View>
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.actionButtonText}>User Info</Text>
-                            <Text style={styles.infoText}>
-                                Joined on {joinDate || 'Unknown date'}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
 
-                    {/* Conditionally render Unfriend option */}
-                    {isFriend && (
-                        <TouchableOpacity style={styles.actionButton} onPress={handleUnfriend}>
+                        {/* User Info section */}
+                        <TouchableOpacity style={styles.actionButton}>
                             <View style={styles.iconContainer}>
-                                <Ionicons name="person-remove" size={24} color="#fff" />
+                                <Ionicons name="information-circle" size={24} color="#fff" />
                             </View>
-                            <Text style={styles.actionButtonText}>Unfriend</Text>
+                            <View style={styles.infoContainer}>
+                                <Text style={styles.actionButtonText}>User Info</Text>
+                                <Text style={styles.infoText}>
+                                    Joined on {joinDate || 'Unknown date'}
+                                </Text>
+                            </View>
                         </TouchableOpacity>
-                    )}
+
+                        {/* Conditionally render Unfriend option when user is a friend and not blocked */}
+                        {isFriend && !isBlocked && (
+                            <TouchableOpacity style={styles.actionButton} onPress={handleUnfriend}>
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name="person-remove" size={24} color="#fff" />
+                                </View>
+                                <Text style={styles.actionButtonText}>Unfriend</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Conditionally render Unblock option when user is blocked */}
+                        {isBlocked && onUnblock && (
+                            <TouchableOpacity style={styles.actionButton} onPress={handleUnblockUser}>
+                                <View style={styles.iconContainer}>
+                                    <Ionicons name="person-add" size={24} color="#4caf50" />
+                                </View>
+                                <Text style={[styles.actionButtonText, styles.unblockText]}>Unblock User</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Report user option */}
+                        <TouchableOpacity style={styles.actionButton} onPress={handleReportUser}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons name="flag" size={24} color="#ff4d4d" />
+                            </View>
+                            <Text style={[styles.actionButtonText, styles.reportText]}>Report</Text>
+                        </TouchableOpacity>
+
+                        {/* Block user option - only show if user is not already blocked */}
+                        {!isBlocked && (
+                            <BlockUser
+                                userId={userId}
+                                username={username}
+                                onActionComplete={onClose}
+                            />
+                        )}
+                    </View>
                 </View>
-            </View>
-        </Modal>
+            </Modal>
+
+            {/* Report Modal */}
+            <ReportUserModal
+                isVisible={isModalVisible}
+                onClose={closeReportModal}
+                onSubmit={handleSubmitReport}
+                isLoading={isLoading}
+                username={currentUsername}
+            />
+        </>
     );
 };
 
@@ -173,6 +271,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#AAAAAA',
         marginTop: 4
+    },
+    reportText: {
+        color: '#ff4d4d'  // Red color for report option
+    },
+    unblockText: {
+        color: '#4caf50'  // Green color for unblock option
     }
 });
 

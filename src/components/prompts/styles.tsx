@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
     promptCard: {
         backgroundColor: '#132fba',
         borderRadius: 20,
-        minHeight: 200,
+        minHeight: 150,
         display: 'flex',
         flexDirection: 'column',
         shadowColor: '#3b56d9',

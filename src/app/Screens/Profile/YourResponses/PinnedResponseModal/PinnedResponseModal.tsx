@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
+
 
 // Import the extracted content components
 import TextContent from './TextContent';
@@ -10,6 +10,15 @@ import ImageContent from './ImageContent';
 import VideoContent from './VideoContent';
 import GifContent from './GifContent';
 import ErrorContent from './ErrorContent';
+
+// Custom TextContent wrapper for centered display
+const CenteredTextContent = ({ textContent }: { textContent?: string }) => {
+    return (
+        <View style={styles.centeredTextContainer}>
+            <TextContent textContent={textContent} />
+        </View>
+    );
+};
 
 // Define interfaces for data
 interface ResponseData {
@@ -58,28 +67,36 @@ const PinnedResponseModal = ({
 
     // Render content based on type using the extracted components
     const renderContent = () => {
-        switch (response.content_type) {
-            case 'text':
-                return <TextContent textContent={response.text_content} />;
-            case 'audio':
-                return (
-                    <AudioContent
-                        fileUrl={response.file_url}
-                        responseId={response.id}
-                        playAudio={playAudio}
-                        isPlaying={isPlaying}
-                        playingId={playingId}
-                    />
-                );
-            case 'image':
-                return <ImageContent fileUrl={response.file_url} />;
-            case 'video':
-                return <VideoContent fileUrl={response.file_url} />;
-            case 'gif':
-                return <GifContent fileUrl={response.file_url} />;
-            default:
-                return <ErrorContent />;
-        }
+        const ContentComponent = () => {
+            switch (response.content_type) {
+                case 'text':
+                    return <CenteredTextContent textContent={response.text_content} />;
+                case 'audio':
+                    return (
+                        <AudioContent
+                            fileUrl={response.file_url}
+                            responseId={response.id}
+                            playAudio={playAudio}
+                            isPlaying={isPlaying}
+                            playingId={playingId}
+                        />
+                    );
+                case 'image':
+                    return <ImageContent fileUrl={response.file_url} />;
+                case 'video':
+                    return <VideoContent fileUrl={response.file_url} />;
+                case 'gif':
+                    return <GifContent fileUrl={response.file_url} />;
+                default:
+                    return <ErrorContent />;
+            }
+        };
+
+        return (
+            <View style={styles.contentWrapper}>
+                <ContentComponent />
+            </View>
+        );
     };
 
     return (
@@ -99,21 +116,17 @@ const PinnedResponseModal = ({
                     </View>
 
                     <View style={styles.modalContainer}>
-                        <BlurView intensity={20} tint="dark" style={styles.headerBlur}>
-                            <View style={styles.header}>
-                                <Text style={styles.promptText}>{response.prompt?.text || "No prompt available"}</Text>
-                            </View>
-                        </BlurView>
-
                         <View style={styles.contentContainer}>
                             {renderContent()}
                         </View>
 
-                        <BlurView intensity={20} tint="dark" style={styles.footerBlur}>
-                            <View style={styles.footer}>
-                                <Text style={styles.dateText}>cc: {formatDate(response.created_at)}</Text>
-                            </View>
-                        </BlurView>
+                        <View style={styles.promptContainer}>
+                            <Text style={styles.promptText}>{response.prompt?.text || "No prompt available"}</Text>
+                        </View>
+
+                        <View style={styles.footer}>
+                            <Text style={styles.dateText}>Created: {formatDate(response.created_at)}</Text>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -130,7 +143,7 @@ const styles = StyleSheet.create({
     },
     floatingCloseButtonContainer: {
         position: 'absolute',
-        top: height * 0.3 - 50,
+        top: height * 0.2 - 100, // Adjusted based on new modal height
         width: '100%',
         alignItems: 'center',
         zIndex: 1000,
@@ -148,38 +161,63 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContainer: {
-        backgroundColor: '#000',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: height * 0.7,
-        overflow: 'hidden', // Ensures the blur doesn't extend beyond the modal
+        backgroundColor: '#000', // Changed to plain black background
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        height: height * 0.85,
+        overflow: 'hidden',
     },
-    headerBlur: {
+    contentContainer: {
+        flex: 1,
         width: '100%',
+        padding: 0,
+        borderRadius: 0,
+        overflow: 'hidden',
     },
-    header: {
-        padding: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    contentWrapper: {
+        flex: 1,
+        width: '100%',
+        borderRadius: 0,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        overflow: 'hidden',
+    },
+    centeredTextContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 30,
+        paddingHorizontal: 5,
+        backgroundColor: '#000',
+    },
+    promptContainer: {
+        backgroundColor: '#000', // Changed to plain black background
+        minHeight: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderTopWidth: 0.3,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
     },
     promptText: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
-    },
-    contentContainer: {
-        flex: 1,
-        width: '100%',
-    },
-    footerBlur: {
-        width: '100%',
+        paddingHorizontal: 10,
     },
     footer: {
-        padding: 16,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 0,
+        backgroundColor: '#000', // Changed to plain black background
+        minHeight: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
     },
     dateText: {
-        fontSize: 14,
+        fontSize: 15,
         color: '#888',
         textAlign: 'center',
     },
