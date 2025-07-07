@@ -113,7 +113,7 @@ export const styles = StyleSheet.create({
     },
     // Dashed reaction buttons (emoji icons)
     reactionButton: {
-        marginLeft: 10,
+        marginLeft: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         padding: 8,
         borderRadius: 25,

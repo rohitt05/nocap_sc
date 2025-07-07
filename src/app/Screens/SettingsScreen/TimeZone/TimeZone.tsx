@@ -2,48 +2,54 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView, Statu
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from expo vector icons
+import { Ionicons } from '@expo/vector-icons';
 
 // Define timezone regions with their data
 const TIMEZONE_REGIONS = [
     {
         id: 'india',
-        name: 'India (IST)',
+        name: 'India',
+        code: 'IST',
         timezone: 'Asia/Kolkata',
         emoji: '🇮🇳',
         refreshHour: 12
     },
     {
         id: 'usa',
-        name: 'USA (EST)',
+        name: 'United States',
+        code: 'EST',
         timezone: 'America/New_York',
         emoji: '🇺🇸',
         refreshHour: 12
     },
     {
         id: 'japan',
-        name: 'Japan (JST)',
+        name: 'Japan',
+        code: 'JST',
         timezone: 'Asia/Tokyo',
         emoji: '🇯🇵',
         refreshHour: 12
     },
     {
         id: 'uk',
-        name: 'United Kingdom (GMT/BST)',
+        name: 'United Kingdom',
+        code: 'GMT',
         timezone: 'Europe/London',
         emoji: '🇬🇧',
         refreshHour: 12
     },
     {
         id: 'australia',
-        name: 'Australia (AEST)',
+        name: 'Australia',
+        code: 'AEST',
         timezone: 'Australia/Sydney',
         emoji: '🇦🇺',
         refreshHour: 12
     },
     {
         id: 'germany',
-        name: 'Germany (CET)',
+        name: 'Germany',
+        code: 'CET',
         timezone: 'Europe/Berlin',
         emoji: '🇩🇪',
         refreshHour: 12
@@ -57,7 +63,6 @@ const TimeZone = () => {
     const navigation = useNavigation();
     const [selectedRegion, setSelectedRegion] = useState(null);
     const [tempSelection, setTempSelection] = useState(null);
-    const screenWidth = Dimensions.get('window').width;
 
     // Load saved preference on component mount
     useEffect(() => {
@@ -82,11 +87,9 @@ const TimeZone = () => {
         if (!tempSelection) return;
 
         try {
-            // Find the region object
             const regionData = TIMEZONE_REGIONS.find(r => r.id === tempSelection);
             if (!regionData) return;
 
-            // Save to AsyncStorage
             await AsyncStorage.setItem(
                 REGION_PREFERENCES_KEY,
                 JSON.stringify({
@@ -96,10 +99,7 @@ const TimeZone = () => {
                 })
             );
 
-            // Update state
             setSelectedRegion(tempSelection);
-
-            // Go back to previous screen
             navigation.goBack();
         } catch (error) {
             console.error("Error saving region preference:", error);
@@ -112,30 +112,34 @@ const TimeZone = () => {
     };
 
     // Render a timezone option
-    const renderTimezoneItem = ({ item, index }) => {
+    const renderTimezoneItem = ({ item }) => {
         const isSelected = tempSelection === item.id;
-        const isFirstItem = index === 0;
-        const isLastItem = index === TIMEZONE_REGIONS.length - 1;
 
         return (
             <TouchableOpacity
                 style={[
                     styles.timezoneItem,
-                    isFirstItem && styles.firstItem,
-                    isLastItem && styles.lastItem,
                     isSelected && styles.selectedItem
                 ]}
                 onPress={() => selectTimezone(item.id)}
+                activeOpacity={0.7}
             >
-                <Text style={styles.emoji}>{item.emoji}</Text>
-                <View style={styles.textContainer}>
-                    <Text style={styles.regionName}>{item.name}</Text>
-                </View>
-                {isSelected && (
-                    <View style={styles.checkmark}>
-                        <Text style={styles.checkmarkText}>✓</Text>
+                <View style={styles.itemContent}>
+                    <View style={styles.leftContent}>
+                        <Text style={styles.emoji}>{item.emoji}</Text>
+                        <View style={styles.textContainer}>
+                            <Text style={styles.regionName}>{item.name}</Text>
+                            <Text style={styles.regionCode}>{item.code}</Text>
+                        </View>
                     </View>
-                )}
+                    
+                    <View style={[
+                        styles.radioButton,
+                        isSelected && styles.radioButtonSelected
+                    ]}>
+                        {isSelected && <View style={styles.radioButtonInner} />}
+                    </View>
+                </View>
             </TouchableOpacity>
         );
     };
@@ -144,45 +148,51 @@ const TimeZone = () => {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-            {/* Header Bar with Back Button */}
-            <View style={styles.headerBar}>
+            {/* Header */}
+            <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
+                    activeOpacity={0.7}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Time Zone</Text>
-                <View style={styles.placeholder}></View>
+                <View style={styles.placeholder} />
             </View>
 
-            <View style={styles.header}>
-                <Text style={styles.title}>Select Your Timezone</Text>
-                <Text style={styles.subtitle}>
-                    Choose your region to get daily prompts at noon in your local time
-                </Text>
+            {/* Content */}
+            <View style={styles.content}>
+                {/* Info Section */}
+                <View style={styles.infoSection}>
+                    <Text style={styles.title}>Select Your Region</Text>
+                    <Text style={styles.subtitle}>
+                        Daily prompts will be delivered at 12:00 PM in your selected timezone
+                    </Text>
+                </View>
+
+                {/* Timezone List */}
+                <FlatList
+                    data={TIMEZONE_REGIONS}
+                    renderItem={renderTimezoneItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                />
             </View>
 
-            <FlatList
-                data={TIMEZONE_REGIONS}
-                renderItem={renderTimezoneItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.list}
-            />
-
-            {/* Set Button */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.setButton,
-                        !tempSelection && styles.disabledButton
-                    ]}
-                    onPress={savePreference}
-                    disabled={!tempSelection}
-                >
-                    <Text style={styles.buttonText}>Set Timezone</Text>
-                </TouchableOpacity>
-            </View>
+            {/* Bottom Button */}
+            {tempSelection && (
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={styles.saveButton}
+                        onPress={savePreference}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.buttonText}>Set Timezone</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -190,78 +200,78 @@ const TimeZone = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000', // Pure black background
-    },
-    headerBar: {
-        height: 60,
         backgroundColor: '#000',
+    },
+    header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 15,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
     backButton: {
-        padding: 8,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
         color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold',
+        letterSpacing: 0.3,
     },
     placeholder: {
-        width: 40, // Same width as back button for proper centering
+        width: 32,
     },
-    header: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333', // Darker border color for dark theme
+    content: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    infoSection: {
+        paddingVertical: 24,
+        paddingBottom: 16,
     },
     title: {
-        fontSize: 22,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#fff',
         marginBottom: 8,
-        color: '#fff', // White text for dark theme
+        letterSpacing: 0.2,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#aaa', // Light gray text for dark theme
-        lineHeight: 22,
+        fontSize: 14,
+        color: '#888',
+        lineHeight: 20,
+        fontWeight: '400',
     },
-    list: {
-        padding: 10,
-        width: '100%',
-        paddingBottom: 90, // Extra padding for button at bottom
+    listContainer: {
+        paddingBottom: 100,
     },
     timezoneItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12, // Shorter card height
-        paddingHorizontal: 15,
-        backgroundColor: '#222', // Dark gray cards
-        borderRadius: 0, // No border radius by default
-        marginBottom: 1, // Minimal gap between items
-        width: '100%', // Full screen width cards
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0,
-        shadowRadius: 0,
-        elevation: 0, // Removed elevation
-    },
-    firstItem: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-    },
-    lastItem: {
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        backgroundColor: '#0a0a0a',
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#1a1a1a',
     },
     selectedItem: {
-        backgroundColor: '#333', // Darker gray for selected item
-        borderColor: '#444',
-        borderWidth: 1,
+        borderColor: '#333',
+        backgroundColor: '#111',
+    },
+    itemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+    },
+    leftContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
     },
     emoji: {
-        fontSize: 24, // Slightly smaller emoji
+        fontSize: 20,
         marginRight: 12,
     },
     textContainer: {
@@ -269,47 +279,56 @@ const styles = StyleSheet.create({
     },
     regionName: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#fff', // White text for dark theme
+        fontWeight: '500',
+        color: '#fff',
+        marginBottom: 2,
     },
-    checkmark: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        backgroundColor: '#444', // Dark gray checkmark
+    regionCode: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '400',
+    },
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#333',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    checkmarkText: {
-        color: 'white',
-        fontWeight: 'bold',
+    radioButtonSelected: {
+        borderColor: '#fff',
+    },
+    radioButtonInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#fff',
     },
     buttonContainer: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 20,
+        padding: 16,
         backgroundColor: '#000',
         borderTopWidth: 1,
-        borderTopColor: '#222',
+        borderTopColor: '#1a1a1a',
     },
-    setButton: {
-        backgroundColor: '#333',
-        paddingVertical: 16,
-        borderRadius: 10,
+    saveButton: {
+        backgroundColor: '#fff',
+        paddingVertical: 14,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    disabledButton: {
-        backgroundColor: '#222',
-        opacity: 0.5,
-    },
     buttonText: {
-        color: '#fff',
+        color: '#000',
         fontSize: 16,
-        fontWeight: 'bold',
-    }
+        fontWeight: '600',
+        letterSpacing: 0.2,
+    },
 });
 
 export default TimeZone;

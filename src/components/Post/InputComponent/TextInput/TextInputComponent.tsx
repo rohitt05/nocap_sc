@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { TextInput, StyleSheet, View } from 'react-native';
 
 const TextInputComponent = ({ inputText, setInputText }) => {
-    const [height, setHeight] = useState(120); // Initial height, slightly bigger than before
+    const [height, setHeight] = useState(120); // Initial height
+    const maxHeight = 200; // Set maximum height for scrolling
 
     // Function to handle content size change and adjust height dynamically
     const handleContentSizeChange = (event) => {
-        const { height } = event.nativeEvent.contentSize;
-        setHeight(Math.max(120, height)); // Minimum height of 120, but grows as needed
+        const { height: contentHeight } = event.nativeEvent.contentSize;
+        // Grow until maxHeight, then allow scrolling
+        setHeight(Math.max(120, Math.min(contentHeight, maxHeight)));
     };
 
     return (
@@ -17,6 +19,7 @@ const TextInputComponent = ({ inputText, setInputText }) => {
                 placeholder="Poems, thoughts, stories, or anything else you want to share..."
                 placeholderTextColor="#999"
                 multiline={true}
+                scrollEnabled={true} // Explicitly enable scrolling
                 value={inputText}
                 onChangeText={setInputText}
                 onContentSizeChange={handleContentSizeChange}
@@ -44,10 +47,11 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         fontSize: 16,
         borderRadius: 12,
-        backgroundColor: '#111', // Changed to dark background as requested
+        backgroundColor: '#111',
         borderWidth: 1,
-        borderColor: '#333', // Darkened border to match the new background
-        color: '#fff', // Changed text color to white for better visibility on dark background
+        borderColor: '#333',
+        color: '#fff',
+        maxHeight: 200, // Add maximum height to enable scrolling
     },
 });
 

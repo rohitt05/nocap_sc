@@ -99,7 +99,8 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontFamily: fonts.semiBold,
         textAlign: 'center',
-        marginVertical: 5,
+        // marginVertical: 0,
+        bottom: 15,
     },
     scrollViewContent: {
         padding: 1,

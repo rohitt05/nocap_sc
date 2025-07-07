@@ -1,0 +1,230 @@
+import { Dimensions, StyleSheet } from "react-native";
+const { height: screenHeight } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+    gestureContainer: {
+        flex: 1,
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        justifyContent: 'flex-end',
+    },
+    backdrop: {
+        flex: 1,
+    },
+    bottomSheet: {
+        backgroundColor: '#1C1C1E',
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        height: screenHeight * 0.8,
+    },
+    header: {
+        alignItems: 'center',
+        paddingTop: 8,
+        paddingBottom: 16,
+        borderBottomWidth: 0.5,
+        borderBottomColor: '#3A3A3C',
+    },
+    dragIndicator: {
+        width: 36,
+        height: 5,
+        backgroundColor: '#8E8E93',
+        borderRadius: 3,
+        marginBottom: 16,
+    },
+    title: {
+        fontSize: 17,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        letterSpacing: -0.24,
+    },
+    contentContainer: {
+        flex: 1,
+    },
+    listContainer: {
+        paddingTop: 8,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+    },
+    scrollableContent: {
+        flex: 1,
+    },
+    reactionItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingVertical: 16,
+        borderBottomWidth: 0.5,
+        borderBottomColor: '#3A3A3C',
+    },
+    avatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        marginRight: 12,
+    },
+    contentSection: {
+        flex: 1,
+    },
+    userInfo: {
+        marginBottom: 8,
+    },
+    username: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginBottom: 2,
+        letterSpacing: -0.32,
+    },
+    fullName: {
+        fontSize: 14,
+        color: '#8E8E93',
+        letterSpacing: -0.08,
+    },
+    textSection: {
+        position: 'relative',
+        backgroundColor: '#2C2C2E',
+        borderRadius: 16,
+        padding: 12,
+        marginTop: 4,
+    },
+    textContent: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        lineHeight: 22,
+        letterSpacing: -0.08,
+        paddingRight: 30, // Space for delete button
+    },
+    deleteTextButton: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        padding: 4,
+    },
+    mediaSection: {
+        position: 'relative',
+    },
+    reactionMedia: {
+        width: 200,
+        height: 200,
+        borderRadius: 8,
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        backgroundColor: '#FF3B30',
+        borderRadius: 12,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#1C1C1E',
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+    },
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#2C2C2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    emptyText: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginBottom: 8,
+        letterSpacing: -0.45,
+    },
+    emptySubtext: {
+        fontSize: 16,
+        color: '#8E8E93',
+        textAlign: 'center',
+        lineHeight: 22,
+        letterSpacing: -0.08,
+    },
+    errorState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#2C2C2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#FF6B6B',
+        marginBottom: 24,
+        textAlign: 'center',
+        lineHeight: 22,
+        letterSpacing: -0.08,
+    },
+    retryButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    retryText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: -0.08,
+    },
+    loadingState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#8E8E93',
+        marginTop: 16,
+        letterSpacing: -0.08,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
+        padding: 10,
+        zIndex: 100,
+    },
+    zoomModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    zoomModalBackdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    zoomedImage: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'transparent',
+    },
+});
+
+export default styles;

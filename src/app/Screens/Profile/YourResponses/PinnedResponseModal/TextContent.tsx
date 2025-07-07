@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 interface TextContentProps {
     textContent?: string;
@@ -8,7 +8,13 @@ interface TextContentProps {
 const TextContent = ({ textContent }: TextContentProps) => {
     return (
         <View style={styles.textContainer}>
-            <Text style={styles.textContent}>{textContent}</Text>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <Text style={styles.textContent}>{textContent}</Text>
+            </ScrollView>
         </View>
     );
 };
@@ -16,13 +22,20 @@ const TextContent = ({ textContent }: TextContentProps) => {
 const styles = StyleSheet.create({
     textContainer: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#000',
+    },
+    scrollView: {
+        flex: 1,
+        padding: 16,
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
     textContent: {
         fontSize: 16,
         lineHeight: 24,
         color: '#fff',
+        bottom: 20,
     },
 });
 

@@ -9,13 +9,10 @@ import {
     RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import SentModal from '../Screens/Notifications/sentModal';
+import { Link } from 'expo-router';
 import NotificationList from '../Screens/Notifications/NotificationList';
 
 const Notifications = () => {
-    // State for modal visibility
-    const [modalVisible, setModalVisible] = useState(false);
-
     // State for refresh control
     const [refreshing, setRefreshing] = useState(false);
 
@@ -38,18 +35,17 @@ const Notifications = () => {
             <View style={styles.header}>
                 <View style={styles.leftPlaceholder} />
                 <Text style={styles.headerTitle}>Notifications</Text>
-                <TouchableOpacity
-                    style={styles.sentButton}
-                    onPress={() => setModalVisible(true)}
-                >
-                    <Text style={styles.sentButtonText}>Sent</Text>
-                    <Ionicons
-                        name="chevron-forward"
-                        size={16}
-                        color="#fff"
-                        style={styles.chevron}
-                    />
-                </TouchableOpacity>
+                <Link href="../Screens/Notifications/sentModal" asChild>
+                    <TouchableOpacity style={styles.sentButton}>
+                        <Text style={styles.sentButtonText}>Sent</Text>
+                        <Ionicons
+                            name="chevron-forward"
+                            size={16}
+                            color="#fff"
+                            style={styles.chevron}
+                        />
+                    </TouchableOpacity>
+                </Link>
             </View>
 
             {/* Scrollable content with pull-to-refresh */}
@@ -68,13 +64,6 @@ const Notifications = () => {
                 {/* Notification List Component */}
                 <NotificationList />
             </ScrollView>
-
-            {/* Sent Modal */}
-            <SentModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-            // refreshing={refreshing}
-            />
         </SafeAreaView>
     );
 };

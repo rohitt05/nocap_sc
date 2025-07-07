@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
 import { Video, ResizeMode } from 'expo-av'; // Updated to use expo-av
 import { Image } from 'expo-image';
-import { Ionicons, Entypo, Feather, FontAwesome } from '@expo/vector-icons';
+import { Ionicons, Entypo, Feather, MaterialIcons, FontAwesome6 } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 
 import { ResponseItemProps } from '../../types';
@@ -11,6 +11,10 @@ import ReactionPicker from '../ReactionPicker';
 import ReactionTexts from '../ReactionText/ReactionTexts';
 import ShareModal from '../../../SharePostModal';
 import MediaCaptionResponse from './MediaCaptionResponse';
+import HumanReaction from '../HumanReaction'; // Import the new component
+import HumanReactionModal from '../HumanReaction/HumanReactionModal/HumanReactionModal'; // Import the new modal
+import { uploadHumanReaction } from '../HumanReaction/humanReactionService'; // Adjust path as needed
+import { getHumanReactions } from '../HumanReaction/humanReactionService'; // Add this import
 
 import {
     formatTimestamp,
@@ -22,10 +26,32 @@ interface ExtendedResponseItemProps extends ResponseItemProps {
     currentUserId?: string;
 }
 
+interface HumanReaction {
+    id: string;
+    response_id: string;
+    user_id: string;
+    content_type: 'image' | 'video';
+    file_url: string;
+    created_at: string;
+    user: {
+        id: string;
+        username: string;
+        full_name: string;
+        avatar_url: string;
+    };
+}
+
 const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const [showReactionTexts, setShowReactionTexts] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showHumanReaction, setShowHumanReaction] = useState(false);
+    const [showHumanReactionModal, setShowHumanReactionModal] = useState(false); // New state
+    const [isInViewport, setIsInViewport] = useState(false);
+    const [manuallyPaused, setManuallyPaused] = useState(false);
+    const [humanReactions, setHumanReactions] = useState<HumanReaction[]>([]); // Add this state
+
+    const componentRef = useRef<View>(null);
 
     // Using updated expo-video for video error handling
     const mediaUrl = item.content;
@@ -40,12 +66,180 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
 
     const isUserAuthenticated = !!currentUserId && typeof currentUserId === 'string' && currentUserId.length > 0;
 
+    // Fetch human reactions
+    const fetchHumanReactions = async () => {
+        try {
+            const result = await getHumanReactions(item.id);
+            if (result.success) {
+                setHumanReactions(result.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching human reactions:', error);
+        }
+    };
+
+    // Fetch human reactions on component mount
+    useEffect(() => {
+        fetchHumanReactions();
+    }, [item.id]);
+
+    // Check if component is in viewport
+    const checkViewport = () => {
+        if (componentRef.current) {
+            componentRef.current.measure((x, y, width, height, pageX, pageY) => {
+                // Get screen dimensions (approximate)
+                const screenHeight = 800; // You can get this dynamically if needed
+                const screenWidth = 400;
+
+                // Check if the component is visible
+                const isVisible = (
+                    pageY < screenHeight && // Top edge is above screen bottom
+                    pageY + height > 0 && // Bottom edge is below screen top
+                    pageX < screenWidth && // Left edge is before screen right
+                    pageX + width > 0 // Right edge is after screen left
+                );
+
+                // More strict visibility check - at least 50% of component should be visible
+                const visibleHeight = Math.min(screenHeight, pageY + height) - Math.max(0, pageY);
+                const visibilityPercentage = visibleHeight / height;
+                const isSignificantlyVisible = visibilityPercentage > 0.5;
+
+                setIsInViewport(isVisible && isSignificantlyVisible);
+            });
+        }
+    };
+
+    // Check viewport on mount and periodically
+    useEffect(() => {
+        const interval = setInterval(checkViewport, 500); // Check every 500ms
+        checkViewport(); // Initial check
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Handle video play/pause based on viewport visibility
+    useEffect(() => {
+        if (item.type === 'video' && videoRef.current) {
+            if (isInViewport && !manuallyPaused) {
+                // Play video when in viewport and not manually paused
+                videoRef.current.playAsync();
+            } else {
+                // Pause video when out of viewport or manually paused
+                videoRef.current.pauseAsync();
+            }
+        }
+    }, [isInViewport, manuallyPaused, item.type]);
+
+    // Handle manual tap to pause/play
+    const handleVideoTap = () => {
+        if (videoState.playing) {
+            setManuallyPaused(true);
+            togglePlayback();
+        } else {
+            setManuallyPaused(false);
+            togglePlayback();
+        }
+    };
+
     const handleReactionSelected = (reactionType: string) => {
         console.log(`Reaction ${reactionType} was selected for media response`);
     };
 
     const handleReactionTextSelected = (reactionType: string) => {
         console.log(`Reaction text ${reactionType} was selected for media response`);
+    };
+
+    // In your MediaResponse component, replace the handleMediaCaptured function with this:
+
+    const handleMediaCaptured = async (mediaUri: string, mediaType: 'image' | 'video') => {
+        try {
+            console.log(`Captured ${mediaType} for response ${item.id}:`, mediaUri);
+
+            if (!currentUserId) {
+                console.error('User not authenticated');
+                // TODO: Show error message to user
+                Alert.alert('Error', 'You must be logged in to post a reaction');
+                return;
+            }
+
+            // Show loading state (optional)
+            // setIsUploading(true);
+
+            // Upload the human reaction using the imported service
+            const result = await uploadHumanReaction(
+                mediaUri,
+                mediaType,
+                currentUserId,
+                item.id
+            );
+
+            if (result.success) {
+                console.log('Human reaction posted successfully!', result.data);
+                setShowHumanReaction(false);
+                // Refresh human reactions after successful upload
+                fetchHumanReactions();
+
+            } else {
+                console.error('Failed to post human reaction:', result.error);
+
+                // Show error message to user
+                Alert.alert(
+                    'Upload Failed',
+                    result.error || 'Failed to post your reaction. Please try again.'
+                );
+            }
+        } catch (error) {
+            console.error('Error posting human reaction:', error);
+
+            // Show generic error message
+            Alert.alert(
+                'Error',
+                'Something went wrong. Please check your internet connection and try again.'
+            );
+        } finally {
+
+        }
+    };
+
+    // Render profile images for reactions button
+    const renderReactionProfiles = () => {
+        const latestReactions = humanReactions.slice(0, 3); // Get latest 3 reactions
+
+        if (latestReactions.length === 0) {
+            // No reactions - show original button
+            return (
+                <TouchableOpacity
+                    style={[styles.reactionButton, updatedStyles.viewReactionsButton]}
+                    onPress={() => setShowHumanReactionModal(true)}
+                >
+                    <FontAwesome6 name="egg" size={14} color="white" />
+
+                    {/* <Text style={updatedStyles.buttonText}>Reactions</Text> */}
+                </TouchableOpacity>
+            );
+        }
+
+        // Has reactions - show profile images only
+        return (
+            <TouchableOpacity
+                style={updatedStyles.profileOnlyButton}
+                onPress={() => setShowHumanReactionModal(true)}
+            >
+                <View style={updatedStyles.profileStack}>
+                    {latestReactions.map((reaction, index) => (
+                        <Image
+                            key={reaction.id}
+                            source={{ uri: reaction.user.avatar_url || 'https://via.placeholder.com/24' }}
+                            style={[
+                                updatedStyles.profileImage,
+                                { zIndex: latestReactions.length - index, marginLeft: index > 0 ? -8 : 0 }
+                            ]}
+                            contentFit="cover"
+                        />
+                    ))}
+                </View>
+            </TouchableOpacity>
+        );
     };
 
     const renderMedia = () => {
@@ -76,25 +270,42 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
             case 'video':
                 return (
                     <>
-                        <Video
-                            ref={videoRef}
-                            source={{ uri: videoState.uri }}
-                            style={styles.mediaContent}
-                            resizeMode={ResizeMode.COVER} // Using ResizeMode enum
-                            shouldPlay={false}
-                            isLooping={false}
-                            useNativeControls={false}
-                            onPlaybackStatusUpdate={onPlaybackStatusUpdate}
-                            onError={handleVideoError}
-                            onLoad={(status) => {
-                                if (status.isLoaded) {
-                                    console.log('Video loaded successfully');
-                                }
-                            }}
-                            posterSource={{ uri: mediaUrl }}
-                            usePoster={true}
-                            posterStyle={styles.mediaPoster}
-                        />
+                        <TouchableOpacity
+                            style={updatedStyles.videoTouchArea}
+                            onPress={handleVideoTap}
+                            activeOpacity={1}
+                        >
+                            <Video
+                                ref={videoRef}
+                                source={{ uri: videoState.uri }}
+                                style={styles.mediaContent}
+                                resizeMode={ResizeMode.COVER}
+                                shouldPlay={false} // We'll control this programmatically
+                                isLooping={true}
+                                useNativeControls={false}
+                                onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                                onError={handleVideoError}
+                                onLoad={(status) => {
+                                    if (status.isLoaded) {
+                                        console.log('Video loaded successfully');
+                                        // Check viewport after video loads
+                                        setTimeout(checkViewport, 100);
+                                    }
+                                }}
+                                posterSource={{ uri: mediaUrl }}
+                                usePoster={!isInViewport} // Show poster when not in viewport
+                                posterStyle={styles.mediaPoster}
+                            />
+                        </TouchableOpacity>
+
+                        {/* Visual indicator when video is paused */}
+                        {item.type === 'video' && !videoState.playing && isInViewport && (
+                            <View style={updatedStyles.pauseIndicator}>
+                                <View style={updatedStyles.pauseIcon}>
+                                    <Ionicons name="play" size={32} color="white" />
+                                </View>
+                            </View>
+                        )}
 
                         {videoState.error && (
                             <View style={styles.errorOverlay}>
@@ -120,7 +331,11 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
     };
 
     return (
-        <View style={updatedStyles.mainContainer}>
+        <View
+            ref={componentRef}
+            style={updatedStyles.mainContainer}
+            onLayout={checkViewport} // Check viewport when component layout changes
+        >
             <View style={styles.mediaResponseItem}>
                 <View style={styles.mediaContainer}>
                     {renderMedia()}
@@ -164,6 +379,25 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                     postType={item.type}
                 />
 
+                {/* HumanReaction Camera Component */}
+                {isUserAuthenticated && (
+                    <HumanReaction
+                        isVisible={showHumanReaction}
+                        onClose={() => setShowHumanReaction(false)}
+                        responseId={item.id}
+                        userId={currentUserId}
+                        onMediaCaptured={handleMediaCaptured}
+                    />
+                )}
+
+                {/* Human Reaction Modal */}
+                <HumanReactionModal
+                    isVisible={showHumanReactionModal}
+                    onClose={() => setShowHumanReactionModal(false)}
+                    responseId={item.id}
+                    currentUserId={currentUserId}
+                />
+
                 {isUserAuthenticated && (
                     <ReactionTexts
                         responseId={item.id}
@@ -185,7 +419,22 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                 )}
 
                 <View style={styles.bottomBar}>
+                    {/* Human Reactions View Button - Left Side */}
+                    <View style={updatedStyles.leftControls}>
+                        {renderReactionProfiles()}
+                    </View>
+
+                    {/* All reaction buttons on the right */}
                     <View style={styles.reactionsContainer}>
+                        {isUserAuthenticated && (
+                            <TouchableOpacity
+                                style={[styles.reactionButton, showHumanReaction && additionalStyles.activeButton]}
+                                onPress={() => setShowHumanReaction(prev => !prev)}
+                            >
+                                <MaterialIcons name="camera-alt" size={18} color="#fff" />
+                            </TouchableOpacity>
+                        )}
+
                         {isUserAuthenticated && (
                             <TouchableOpacity
                                 style={[styles.reactionButton, showReactionTexts && additionalStyles.activeButton]}
@@ -205,19 +454,6 @@ const MediaResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserI
                         )}
                     </View>
                 </View>
-
-                {item.type === 'video' && (
-                    <TouchableOpacity
-                        style={styles.debugButton}
-                        onPress={togglePlayback}
-                    >
-                        <FontAwesome
-                            name={videoState.playing ? 'pause' : 'play'}
-                            size={24}
-                            color="white"
-                        />
-                    </TouchableOpacity>
-                )}
             </View>
 
             {item.caption && (
@@ -247,6 +483,60 @@ const updatedStyles = StyleSheet.create({
     captionSection: {
         paddingHorizontal: 10,
         paddingBottom: 12,
+    },
+    leftControls: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+    },
+    viewReactionsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: 20,
+    },
+    profileOnlyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    profileStack: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    profileImage: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    videoTouchArea: {
+        width: '100%',
+        height: '100%',
+    },
+    pauseIndicator: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -30 }, { translateY: -30 }],
+        zIndex: 10,
+    },
+    pauseIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 });
 

@@ -55,8 +55,8 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         position: 'absolute',
-        bottom: 15,
-        left: 15,
+        bottom: 30,
+        left: 60,
     },
     playButton: {
         // No background color
@@ -74,7 +74,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         alignItems: 'center',
         position: 'absolute',
-        bottom: 15,
+        bottom: 5,
         right: 15,
     },
     sendButton: {
@@ -83,12 +83,11 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     reactionButton: {
-        marginLeft: 10,
+        // marginLeft: 5,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         padding: 8,
         borderRadius: 25,
         borderWidth: 1, // Underline style
-        // borderBottomColor: 'white', // Subtle underline
         justifyContent: 'center',
         alignItems: 'center',
         borderStyle: 'dashed',

@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
 import { ResponseItemProps } from '../../types';
-import { Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Entypo, Feather, FontAwesome6, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image'; // Added this import for profile images
 import { styles } from './styles';
 import { Link } from 'expo-router';
 import ReactionPicker from '../ReactionPicker';
-import ReactionTexts from '../ReactionText/ReactionTexts'; // Import ReactionTexts
-import ShareModal from '../../../SharePostModal'; // Import the ShareModal component
-
+import ReactionTexts from '../ReactionText/ReactionTexts';
+import ShareModal from '../../../SharePostModal';
+import HumanReaction from '../HumanReaction'; // Import HumanReaction component
+import HumanReactionModal from '../HumanReaction/HumanReactionModal/HumanReactionModal'; // Import HumanReactionModal
+import { uploadHumanReaction, getHumanReactions } from '../HumanReaction/humanReactionService'; // Import services
 
 import {
     formatTimestamp,
@@ -19,6 +22,21 @@ import {
 // Update the ResponseItemProps to include any necessary properties
 interface ExtendedResponseItemProps extends ResponseItemProps {
     currentUserId: string; // Added to track the current user
+}
+
+interface HumanReaction {
+    id: string;
+    response_id: string;
+    user_id: string;
+    content_type: 'image' | 'video';
+    file_url: string;
+    created_at: string;
+    user: {
+        id: string;
+        username: string;
+        full_name: string;
+        avatar_url: string;
+    };
 }
 
 const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId }) => {
@@ -38,7 +56,11 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
     // State to control reaction texts visibility
     const [showReactionTexts, setShowReactionTexts] = useState(false);
     // state to control share modal visibility
-    const [showShareModal, setShowShareModal] = useState(false); // Add state for ShareModal
+    const [showShareModal, setShowShareModal] = useState(false);
+    // State for human reaction functionality
+    const [showHumanReaction, setShowHumanReaction] = useState(false);
+    const [showHumanReactionModal, setShowHumanReactionModal] = useState(false);
+    const [humanReactions, setHumanReactions] = useState<HumanReaction[]>([]);
 
     // Ref for the text component to measure its height
     const textRef = useRef(null);
@@ -62,6 +84,23 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
         return () => clearTimeout(timeout);
     }, []);
 
+    // Fetch human reactions
+    const fetchHumanReactions = async () => {
+        try {
+            const result = await getHumanReactions(item.id);
+            if (result.success) {
+                setHumanReactions(result.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching human reactions:', error);
+        }
+    };
+
+    // Fetch human reactions on component mount
+    useEffect(() => {
+        fetchHumanReactions();
+    }, [item.id]);
+
     // Toggle expanded state
     const toggleExpanded = () => {
         setExpanded(!expanded);
@@ -74,7 +113,86 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
     };
 
     const handleReactionTextSelected = (reactionType: string) => {
-        console.log(`Reaction text ${reactionType} was selected for audio response`);
+        console.log(`Reaction text ${reactionType} was selected for text response`);
+    };
+
+    // Handle media captured from HumanReaction component
+    const handleMediaCaptured = async (mediaUri: string, mediaType: 'image' | 'video') => {
+        try {
+            console.log(`Captured ${mediaType} for response ${item.id}:`, mediaUri);
+
+            if (!currentUserId) {
+                console.error('User not authenticated');
+                Alert.alert('Error', 'You must be logged in to post a reaction');
+                return;
+            }
+
+            // Upload the human reaction using the imported service
+            const result = await uploadHumanReaction(
+                mediaUri,
+                mediaType,
+                currentUserId,
+                item.id
+            );
+
+            if (result.success) {
+                console.log('Human reaction posted successfully!', result.data);
+                setShowHumanReaction(false);
+                // Refresh human reactions after successful upload
+                fetchHumanReactions();
+            } else {
+                console.error('Failed to post human reaction:', result.error);
+                Alert.alert(
+                    'Upload Failed',
+                    result.error || 'Failed to post your reaction. Please try again.'
+                );
+            }
+        } catch (error) {
+            console.error('Error posting human reaction:', error);
+            Alert.alert(
+                'Error',
+                'Something went wrong. Please check your internet connection and try again.'
+            );
+        }
+    };
+
+    // Render profile images for reactions button (same logic as MediaResponse)
+    const renderReactionProfiles = () => {
+        const latestReactions = humanReactions.slice(0, 3); // Get latest 3 reactions
+
+        if (latestReactions.length === 0) {
+            // No reactions - show original button with egg icon
+            return (
+                <TouchableOpacity
+                    style={[styles.reactionButton, updatedStyles.viewReactionsButton]}
+                    onPress={() => setShowHumanReactionModal(true)}
+                >
+                    <FontAwesome6 name="egg" size={14} color="white" />
+                </TouchableOpacity>
+            );
+        }
+
+        // Has reactions - show profile images only
+        return (
+            <TouchableOpacity
+                style={updatedStyles.profileOnlyButton}
+                onPress={() => setShowHumanReactionModal(true)}
+            >
+                <View style={updatedStyles.profileStack}>
+                    {latestReactions.map((reaction, index) => (
+                        <Image
+                            key={reaction.id}
+                            source={{ uri: reaction.user.avatar_url || 'https://via.placeholder.com/24' }}
+                            style={[
+                                updatedStyles.profileImage,
+                                { zIndex: latestReactions.length - index, marginLeft: index > 0 ? -8 : 0 }
+                            ]}
+                            contentFit="cover"
+                        />
+                    ))}
+                </View>
+            </TouchableOpacity>
+        );
     };
 
     // Check if we have necessary data
@@ -96,15 +214,14 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                             <Image
                                 source={{ uri: item.user.avatar || 'https://via.placeholder.com/40' }}
                                 style={styles.profilePic}
+                                contentFit="cover"
                             />
                         </TouchableOpacity>
                     </Link>
                     <View style={styles.headerInfo}>
-                        {/* <Link href={`/Screens/user/users?id=${item.user.id}}`} asChild> */}
                         <TouchableOpacity>
                             <Text style={styles.username}>{item.user.username}</Text>
                         </TouchableOpacity>
-                        {/* </Link> */}
                     </View>
                 </View>
 
@@ -140,18 +257,24 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                     </Text>
                 </View>
 
-                {/* Only render the Show more/less button if needed */}
-                {needsExpansion && (
-                    <TouchableOpacity
-                        style={styles.moreButton}
-                        onPress={toggleExpanded}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.moreButtonText}>
-                            {expanded ? "Show less" : "Show more"}
-                        </Text>
-                    </TouchableOpacity>
-                )}
+                {/* Bottom section with Human Reactions and Show more/less */}
+                <View style={updatedStyles.bottomSection}>
+                    {/* Human Reactions Button - Left Side */}
+                    {isUserAuthenticated && renderReactionProfiles()}
+
+                    {/* Show more/less button - Right Side */}
+                    {needsExpansion && (
+                        <TouchableOpacity
+                            style={[styles.moreButton, updatedStyles.alignedMoreButton]}
+                            onPress={toggleExpanded}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.moreButtonText}>
+                                {expanded ? "Show less" : "Show more"}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
 
                 {/* ShareModal component */}
                 <ShareModal
@@ -159,6 +282,25 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                     onClose={() => setShowShareModal(false)}
                     postId={item.id}
                     postType={item.type}
+                />
+
+                {/* HumanReaction Camera Component */}
+                {isUserAuthenticated && (
+                    <HumanReaction
+                        isVisible={showHumanReaction}
+                        onClose={() => setShowHumanReaction(false)}
+                        responseId={item.id}
+                        userId={currentUserId}
+                        onMediaCaptured={handleMediaCaptured}
+                    />
+                )}
+
+                {/* Human Reaction Modal */}
+                <HumanReactionModal
+                    isVisible={showHumanReactionModal}
+                    onClose={() => setShowHumanReactionModal(false)}
+                    responseId={item.id}
+                    currentUserId={currentUserId}
                 />
 
                 {/* ReactionTexts */}
@@ -185,7 +327,17 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
 
                 {/* Always render reaction container at the bottom right */}
                 <View style={styles.reactionsContainer}>
-                    {/* Reply icon */}
+                    {/* Camera icon - Human Reaction */}
+                    {isUserAuthenticated && (
+                        <TouchableOpacity
+                            style={[styles.reactionButton, showHumanReaction && additionalStyles.activeButton]}
+                            onPress={() => setShowHumanReaction(prev => !prev)}
+                        >
+                            <MaterialIcons name="camera-alt" size={18} color="#fff" />
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Type icon */}
                     {isUserAuthenticated && (
                         <TouchableOpacity
                             style={[styles.reactionButton, showReactionTexts && additionalStyles.activeButton]}
@@ -197,7 +349,6 @@ const TextResponse: React.FC<ExtendedResponseItemProps> = ({ item, currentUserId
                             <Feather name="type" size={18} color="#fff" />
                         </TouchableOpacity>
                     )}
-
 
                     {/* Only show emoji button if user is authenticated */}
                     {isUserAuthenticated && (
@@ -221,6 +372,51 @@ const additionalStyles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#3498db',
     }
+});
+
+// Updated styles for the new layout
+const updatedStyles = StyleSheet.create({
+    bottomSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        // marginTop: 18,
+    },
+    viewReactionsButton: {
+        top: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: 20,
+    },
+    profileOnlyButton: {
+        top: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    profileStack: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 8,
+    },
+    profileImage: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 4,
+    },
+    alignedMoreButton: {
+        marginLeft: 'auto', // Push to the right
+    },
 });
 
 export default TextResponse;

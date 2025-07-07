@@ -1,26 +1,20 @@
-import React, { useRef, useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    Modal,
-    TouchableWithoutFeedback,
-    PanResponder,
-    Animated,
-    Image,
     TouchableOpacity,
+    SafeAreaView,
     ActivityIndicator,
     FlatList,
-    Dimensions,
-    Platform
+    Platform,
+    Image,
+    BackHandler
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSentRequests } from '../../../../API/useSentRequests';
 import { formatDistanceToNow } from 'date-fns';
-
-const { height } = Dimensions.get('window');
-const MODAL_HEIGHT = height * 0.8;
-const SNAP_THRESHOLD = 0.3;
-
 
 // Memo-ized request item component
 const RequestItem = memo(({ request, onCancel, isProcessing }) => {
@@ -83,10 +77,8 @@ const ErrorState = memo(({ error, onRetry }) => (
     </View>
 ));
 
-const SentModal = ({ visible, onClose }) => {
-    const [modalVisible, setModalVisible] = useState(visible);
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
+const SentModal = () => {
+    const router = useRouter();
     const [processingIds, setProcessingIds] = useState([]);
 
     const {
@@ -96,51 +88,6 @@ const SentModal = ({ visible, onClose }) => {
         refreshSentRequests,
         cancelFriendRequest
     } = useSentRequests();
-
-    // Optimize animations with useCallback
-    const animateIn = useCallback(() => {
-        setModalVisible(true);
-        Animated.parallel([
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 250,
-                useNativeDriver: true
-            }),
-            Animated.spring(slideAnim, {
-                toValue: 0,
-                friction: 9,
-                tension: 80,
-                useNativeDriver: true
-            })
-        ]).start();
-    }, [fadeAnim, slideAnim]);
-
-    const closeModal = useCallback(() => {
-        Animated.parallel([
-            Animated.timing(fadeAnim, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: true
-            }),
-            Animated.timing(slideAnim, {
-                toValue: MODAL_HEIGHT,
-                duration: 250,
-                useNativeDriver: true
-            })
-        ]).start(() => {
-            setModalVisible(false);
-            onClose();
-        });
-    }, [fadeAnim, slideAnim, onClose]);
-
-    // Effect for visibility changes
-    useEffect(() => {
-        if (visible) {
-            animateIn();
-        } else {
-            closeModal();
-        }
-    }, [visible, animateIn, closeModal]);
 
     // Memoize cancel handler to prevent unnecessary rerenders
     const handleCancel = useCallback(async (requestId) => {
@@ -153,35 +100,6 @@ const SentModal = ({ visible, onClose }) => {
             setProcessingIds(prev => prev.filter(id => id !== requestId));
         }
     }, [cancelFriendRequest]);
-
-    // Optimize pan responder
-    const panResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, gestureState) => {
-                return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx * 2);
-            },
-            onPanResponderMove: Animated.event(
-                [null, { dy: slideAnim }],
-                { useNativeDriver: false }
-            ),
-            onPanResponderRelease: (_, gestureState) => {
-                const draggedDownEnough = gestureState.dy > MODAL_HEIGHT * SNAP_THRESHOLD ||
-                    (gestureState.vy > 0.5 && gestureState.dy > 50);
-
-                if (draggedDownEnough) {
-                    closeModal();
-                } else {
-                    Animated.spring(slideAnim, {
-                        toValue: 0,
-                        friction: 9,
-                        tension: 80,
-                        useNativeDriver: true
-                    }).start();
-                }
-            }
-        })
-    ).current;
 
     // Optimized render item for FlatList
     const renderItem = useCallback(({ item }) => (
@@ -203,118 +121,86 @@ const SentModal = ({ visible, onClose }) => {
         refreshSentRequests();
     }, [refreshSentRequests]);
 
-    if (!modalVisible) return null;
+    // Handle hardware back button on Android
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            router.back();
+            return true; // Prevent default behavior
+        });
+
+        return () => backHandler.remove();
+    }, [router]);
 
     return (
-        <Modal
-            visible={modalVisible}
-            transparent={true}
-            animationType="none"
-            statusBarTranslucent={true}
-            onRequestClose={closeModal}
-        >
-            <Animated.View
-                style={[
-                    styles.backdrop,
-                    { opacity: fadeAnim }
-                ]}
-            >
-                <TouchableWithoutFeedback onPress={closeModal}>
-                    <View style={styles.modalContainer}>
-                        <TouchableWithoutFeedback>
-                            <Animated.View
-                                style={[
-                                    styles.bottomSheet,
-                                    {
-                                        transform: [{ translateY: slideAnim }],
-                                    }
-                                ]}
-                            >
-                                <View
-                                    {...panResponder.panHandlers}
-                                    style={styles.dragHandleArea}
-                                >
-                                    <View style={styles.handle} />
-                                    <Text style={styles.headerText}>Sent Requests</Text>
-                                </View>
+        <SafeAreaView style={styles.container}>
+            {/* Header with back button */}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Sent Requests</Text>
+                <View style={styles.rightPlaceholder} />
+            </View>
 
-                                {/* Replace ScrollView with FlatList for better performance */}
-                                {loading && !sentRequests.length ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator size="large" color="#00FF00" />
-                                    </View>
-                                ) : error ? (
-                                    <ErrorState error={error} onRetry={refreshSentRequests} />
-                                ) : sentRequests.length === 0 ? (
-                                    <EmptyState />
-                                ) : (
-                                    <FlatList
-                                        data={sentRequests}
-                                        renderItem={renderItem}
-                                        keyExtractor={keyExtractor}
-                                        ItemSeparatorComponent={ItemSeparator}
-                                        contentContainerStyle={styles.scrollContentContainer}
-                                        onRefresh={handleRefresh}
-                                        refreshing={loading}
-                                        showsVerticalScrollIndicator={false}
-                                        initialNumToRender={8}
-                                        maxToRenderPerBatch={5}
-                                        windowSize={10}
-                                        removeClippedSubviews={true}
-                                        ListFooterComponent={<View style={styles.bottomSpacer} />}
-                                    />
-                                )}
-                            </Animated.View>
-                        </TouchableWithoutFeedback>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Animated.View>
-        </Modal>
+            {/* Content */}
+            {loading && !sentRequests.length ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#00FF00" />
+                </View>
+            ) : error ? (
+                <ErrorState error={error} onRetry={refreshSentRequests} />
+            ) : sentRequests.length === 0 ? (
+                <EmptyState />
+            ) : (
+                <FlatList
+                    data={sentRequests}
+                    renderItem={renderItem}
+                    keyExtractor={keyExtractor}
+                    ItemSeparatorComponent={ItemSeparator}
+                    contentContainerStyle={styles.scrollContentContainer}
+                    onRefresh={handleRefresh}
+                    refreshing={loading}
+                    showsVerticalScrollIndicator={false}
+                    initialNumToRender={8}
+                    maxToRenderPerBatch={5}
+                    windowSize={10}
+                    removeClippedSubviews={true}
+                    ListFooterComponent={<View style={styles.bottomSpacer} />}
+                />
+            )}
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    backdrop: {
+    container: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: '#000',
     },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    bottomSheet: {
-        backgroundColor: '#111',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        height: MODAL_HEIGHT,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: -4,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 10,
-    },
-    dragHandleArea: {
-        paddingTop: 10,
-        paddingBottom: 16,
+    header: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        height: 60,
         borderBottomWidth: 1,
         borderBottomColor: '#333',
     },
-    handle: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#666',
-        borderRadius: 3,
-        marginBottom: 16,
+    backButton: {
+        padding: 8,
+        marginLeft: -8,
     },
-    headerText: {
+    headerTitle: {
         color: '#fff',
         fontSize: 18,
         fontWeight: '600',
-        marginBottom: 4,
+    },
+    rightPlaceholder: {
+        width: 40,
     },
     scrollContentContainer: {
         paddingHorizontal: 16,
@@ -405,6 +291,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     emptyContainer: {
+        flex: 1,
         padding: 60,
         alignItems: 'center',
         justifyContent: 'center',
@@ -425,4 +312,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default React.memo(SentModal);
+export default SentModal;
