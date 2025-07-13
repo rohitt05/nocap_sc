@@ -14,7 +14,6 @@ import {
     Keyboard,
     RefreshControl,
     Animated,
-    PanGestureHandler,
     Dimensions,
     StatusBar
 } from 'react-native';

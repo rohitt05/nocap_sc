@@ -101,6 +101,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             "Allow $(NoCap) to access your contacts to help you connect with friends",
         },
       ],
+      [
+        // highlight-start
+        "@rnmapbox/maps",
+        {
+          RNMapboxMapsDownloadToken:
+            "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw",
+          RNMapboxMapsVersion: "11.0.0",
+        },
+        // highlight-end
+      ],
+      [
+        "expo-location",
+        {
+          locationWhenInUsePermission: "Show current location on map.",
+        },
+      ],
     ],
     extra: {
       router: {
