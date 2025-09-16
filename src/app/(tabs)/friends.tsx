@@ -448,95 +448,95 @@ export default function Friends() {
                 </ScrollView>
             </Animated.View>
 
-            {/* Bottom Sheet for Add More Friends */}
-            <Animated.View
-                style={[
-                    localStyles.bottomSheet,
-                    {
-                        height: bottomSheetAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [BOTTOM_SHEET_MIN_HEIGHT, SCREEN_HEIGHT - HEADER_HEIGHT],
-                        }),
-                        transform: [{
-                            translateY: bottomSheetAnim.interpolate({
+            {/* ✅ ENHANCED CONDITIONAL BOTTOM SHEET - Only render if friends <= 30 AND there are suggested users */}
+            {friends.length <= 30 && suggestedUsers.length > 0 && (
+                <Animated.View
+                    style={[
+                        localStyles.bottomSheet,
+                        {
+                            height: bottomSheetAnim.interpolate({
                                 inputRange: [0, 1],
-                                outputRange: [0, 0],
+                                outputRange: [BOTTOM_SHEET_MIN_HEIGHT, SCREEN_HEIGHT - HEADER_HEIGHT],
                             }),
-                        }],
-                    }
-                ]}
-            >
-                {/* Bottom Sheet Header */}
-                <TouchableOpacity
-                    style={localStyles.bottomSheetHeader}
-                    onPress={isBottomSheetExpanded ? collapseBottomSheet : expandBottomSheet}
-                    activeOpacity={0.8}
+                            transform: [{
+                                translateY: bottomSheetAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0, 0],
+                                }),
+                            }],
+                        }
+                    ]}
                 >
-                    <View style={localStyles.dragHandle} />
-                    <View style={localStyles.bottomSheetTitleContainer}>
-                        <View>
-                            <Text style={localStyles.bottomSheetTitle}>
-                                Add More Friends
-                            </Text>
-                            <Text style={localStyles.bottomSheetSubtitle}>
-                                ...but remember less is more.
-                            </Text>
+                    {/* Bottom Sheet Header */}
+                    <TouchableOpacity
+                        style={localStyles.bottomSheetHeader}
+                        onPress={isBottomSheetExpanded ? collapseBottomSheet : expandBottomSheet}
+                        activeOpacity={0.8}
+                    >
+                        <View style={localStyles.dragHandle} />
+                        <View style={localStyles.bottomSheetTitleContainer}>
+                            <View>
+                                <Text style={localStyles.bottomSheetTitle}>
+                                    Add More Friends
+                                </Text>
+                                <Text style={localStyles.bottomSheetSubtitle}>
+                                    ...but remember less is more.
+                                </Text>
+                            </View>
+                            <Feather
+                                name={isBottomSheetExpanded ? "chevron-down" : "chevron-up"}
+                                size={20}
+                                color="#888"
+                            />
                         </View>
-                        <Feather
-                            name={isBottomSheetExpanded ? "chevron-down" : "chevron-up"}
-                            size={20}
-                            color="#888"
-                        />
-                    </View>
-                </TouchableOpacity>
+                    </TouchableOpacity>
 
-                {/* Bottom Sheet Content */}
-                {isBottomSheetExpanded && (
-                    <View style={localStyles.bottomSheetContent}>
-                       
+                    {/* Bottom Sheet Content */}
+                    {isBottomSheetExpanded && (
+                        <View style={localStyles.bottomSheetContent}>
+                            {/* Suggested Users List */}
+                            <ScrollView style={localStyles.suggestedUsersContainer}>
+                                {loadingAllUsers && (
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="large" color="#3897f0" />
+                                    </View>
+                                )}
 
-                        {/* Suggested Users List */}
-                        <ScrollView style={localStyles.suggestedUsersContainer}>
-                            {loadingAllUsers && (
-                                <View style={styles.loadingContainer}>
-                                    <ActivityIndicator size="large" color="#3897f0" />
-                                </View>
-                            )}
+                                {allUsersError && (
+                                    <View style={styles.errorContainer}>
+                                        <Text style={styles.errorText}>{allUsersError}</Text>
+                                        <TouchableOpacity
+                                            style={styles.retryButton}
+                                            onPress={refreshAllUsers}
+                                        >
+                                            <Text style={styles.retryText}>Retry</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
 
-                            {allUsersError && (
-                                <View style={styles.errorContainer}>
-                                    <Text style={styles.errorText}>{allUsersError}</Text>
-                                    <TouchableOpacity
-                                        style={styles.retryButton}
-                                        onPress={refreshAllUsers}
-                                    >
-                                        <Text style={styles.retryText}>Retry</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
+                                {!loadingAllUsers && !allUsersError && suggestedUsers.length > 0 && (
+                                    <FlatList
+                                        data={suggestedUsers}
+                                        renderItem={renderSuggestedUser}
+                                        keyExtractor={(item: User) => item.id}
+                                        scrollEnabled={false}
+                                    />
+                                )}
 
-                            {!loadingAllUsers && !allUsersError && suggestedUsers.length > 0 && (
-                                <FlatList
-                                    data={suggestedUsers}
-                                    renderItem={renderSuggestedUser}
-                                    keyExtractor={(item: User) => item.id}
-                                    scrollEnabled={false}
-                                />
-                            )}
-
-                            {!loadingAllUsers && !allUsersError && suggestedUsers.length === 0 && (
-                                <View style={styles.emptyContainer}>
-                                    <Feather name="users" size={50} color="#666" />
-                                    <Text style={styles.emptyText}>No more users to add</Text>
-                                    <Text style={styles.emptySubtext}>
-                                        You've already added all available users as friends or sent them requests!
-                                    </Text>
-                                </View>
-                            )}
-                        </ScrollView>
-                    </View>
-                )}
-            </Animated.View>
+                                {!loadingAllUsers && !allUsersError && suggestedUsers.length === 0 && (
+                                    <View style={styles.emptyContainer}>
+                                        <Feather name="users" size={50} color="#666" />
+                                        <Text style={styles.emptyText}>No more users to add</Text>
+                                        <Text style={styles.emptySubtext}>
+                                            You've already added all available users as friends or sent them requests!
+                                        </Text>
+                                    </View>
+                                )}
+                            </ScrollView>
+                        </View>
+                    )}
+                </Animated.View>
+            )}
         </SafeAreaView>
     );
 }

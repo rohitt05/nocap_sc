@@ -24,7 +24,6 @@ import {
     saveProfile
 } from './profileUtils'; // Adjust path if needed
 import { styles } from './styles'; // Adjust path if needed
-
 interface EditProfileModalProps {
     visible: boolean;
     onClose: () => void;
@@ -38,14 +37,12 @@ interface EditProfileModalProps {
     };
     refreshUserData: () => Promise<void>;
 }
-
 const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditProfileModalProps) => {
     const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [bio, setBio] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [uploading, setUploading] = useState(false);
-
     useEffect(() => {
         if (visible && userData) {
             setFullName(userData.full_name || '');
@@ -54,7 +51,6 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
             setAvatarUrl(userData.avatar_url || 'https://via.placeholder.com/150');
         }
     }, [visible, userData]);
-
     // Create a PanResponder for swipe down to close
     const panResponder = PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -67,15 +63,12 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
             }
         },
     });
-
     const handleDismissKeyboard = () => dismissKeyboard(Keyboard);
-
     const handlePickImage = async () => {
         await pickImage(setUploading, (base64Data: string, fileExt: string) =>
             uploadAvatarBase64(base64Data, fileExt, setAvatarUrl)
         );
     };
-
     const handleSaveProfile = async () => {
         await saveProfile(
             fullName,
@@ -88,7 +81,6 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
             onClose
         );
     };
-
     return (
         <Modal
             animationType="slide"
@@ -103,10 +95,9 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                         style={styles.keyboardAvoidingContainer}
                     >
                         <View {...panResponder.panHandlers} style={styles.modalView}>
-                            {/* Swipe indicator at the top of modal */}
+                            {/** Swipe indicator at the top of modal */}*
                             <View style={styles.swipeIndicator} />
-
-                            {/* Modal Header */}
+                            {/** Modal Header */}*
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>Edit Profile</Text>
                                 <TouchableOpacity
@@ -119,9 +110,8 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-
                             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                                {/* Profile Image Section */}
+                                {/** Profile Image Section */}*
                                 <View style={styles.profileImageSection}>
                                     {uploading && (
                                         <View style={styles.loadingOverlay}>
@@ -144,8 +134,7 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                     </View>
                                     <Text style={styles.changePhotoText}>Change profile photo</Text>
                                 </View>
-
-                                {/* Form Fields */}
+                                {/** Form Fields */}*
                                 <View style={styles.formSection}>
                                     <View style={styles.inputContainer}>
                                         <Text style={styles.inputLabel}>Full Name</Text>
@@ -158,7 +147,6 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                             editable={!uploading}
                                         />
                                     </View>
-
                                     <View style={styles.inputContainer}>
                                         <Text style={styles.inputLabel}>Username</Text>
                                         <TextInput
@@ -170,7 +158,6 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                             editable={!uploading}
                                         />
                                     </View>
-
                                     <View style={styles.inputContainer}>
                                         <Text style={styles.inputLabel}>Bio</Text>
                                         <TextInput
@@ -193,5 +180,4 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
         </Modal>
     );
 };
-
 export default EditProfileModal;

@@ -1,0 +1,132 @@
+{
+    "Museums & Heritage": [
+        {
+            "name": "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya",
+            "coordinates": {
+                "lat": 18.927391,
+                "lng": 72.832054
+            },
+            "description": "A majestic Indo‑Saracenic museum situated in Fort/Kala Ghoda (South Mumbai), housing ~50,000 artefacts—from archaeology and art to natural history."
+        }
+    ],
+    "Cultural / Religious Sites": [
+        {
+            "name": "Siddhivinayak Temple",
+            "coordinates": {
+                "lat": 19.016944,
+                "lng": 72.830278
+            },
+            "description": "One of Mumbai’s most visited Hindu temples, dedicated to Lord Ganesha; attracts large numbers of devotees and pilgrims."
+        },
+        {
+            "name": "Haji Ali Dargah",
+            "coordinates": {
+                "lat": 18.9827,
+                "lng": 72.8089
+            },
+            "description": "A striking Indo‑Islamic mosque and tomb built on a small islet off Worli, connected via a narrow causeway. Renowned for its marble courtyard and spiritual ambiance."
+        }
+    ],
+    "Beaches, Promenades & Viewpoints": [
+        {
+            "name": "Marine Drive",
+            "coordinates": {
+                "lat": 18.945,
+                "lng": 72.81
+            },
+            "description": "Mumbai’s 3 km-long crescent promenade along the Arabian Sea. Named for how its streetlights sparkle like a necklace at night."
+        },
+        {
+            "name": "Juhu Beach",
+            "coordinates": {
+                "lat": 19.104763,
+                "lng": 72.82393
+            },
+            "description": "A bustling, expansive beach in suburban Mumbai, famed for evening crowds, street food, and sunset views."
+        }
+    ],
+    "Iconic Landmarks & Must-Sees": [
+        {
+            "name": "Gateway of India",
+            "coordinates": {
+                "lat": 18.922064,
+                "lng": 72.834641
+            },
+            "description": "A grand basalt arch monument built in Indo‑Saracenic style to commemorate George V’s visit. A symbolic entrance and signature icon of Mumbai."
+        },
+        {
+            "name": "Chhatrapati Shivaji Terminus (CST)",
+            "coordinates": {
+                "lat": 18.943888,
+                "lng": 72.835991
+            },
+            "description": "Victorian Gothic‑Revival railway station and UNESCO World Heritage site. Noted for ornate architecture blending British and Indian motifs."
+        },
+        {
+            "name": "Elephanta Caves",
+            "coordinates": {
+                "lat": 18.963253,
+                "lng": 72.931442
+            },
+            "description": "Ancient rock-cut cave temples dating back to the 7th century, dedicated primarily to Shiva. UNESCO World Heritage site reached via ferry from Gateway of India."
+        }
+    ],
+    "Additional Notable Spots": [
+        {
+            "name": "Aarey Milk Colony",
+            "coordinates": {
+                "lat": 19.1561292,
+                "lng": 72.8707223
+            },
+            "description": "Green expanse in Goregaon East—picnic lawns, gardens, nursery, often called Mumbai’s green lung."
+        },
+        {
+            "name": "Sanjay Gandhi National Park",
+            "coordinates": {
+                "lat": 19.2306,
+                "lng": 72.8663
+            },
+            "description": "Expansive protected forest in northern Mumbai, with Kanheri Caves and wildlife."
+        },
+        {
+            "name": "Bandra–Worli Sea Link (Rajiv Gandhi Sea Link)",
+            "coordinates": {
+                "lat": 19.051,
+                "lng": 72.816
+            },
+            "description": "5.6 km cable-stayed bridge linking Bandra to Worli; sleek modern engineering landmark."
+        },
+        {
+            "name": "Atal Setu (Mumbai Trans Harbour Link)",
+            "coordinates": {
+                "lat": 18.981,
+                "lng": 72.8785
+            },
+            "description": "India’s longest sea bridge (21.8 km), linking Sewri (Mumbai) to Nhava Sheva; opened Jan 2024."
+        },
+        {
+            "name": "Prong’s Lighthouse (Colaba Lighthouse)",
+            "coordinates": {
+                "lat": 18.879238,
+                "lng": 72.79975
+            },
+            "description": "Heritage stone lighthouse at Colaba Point marking entrance to Mumbai Harbour."
+        },
+        {
+            "name": "Manori Island",
+            "coordinates": {
+                "lat": 19.2068,
+                "lng": 72.7851
+            },
+            "description": "Quaint northern Mumbai beach village on Dharavi Bet, known for its laid‑back seaside charm."
+        },
+        {
+            "name": "Madh Island",
+            "coordinates": {
+                "lat": 19.135754,
+                "lng": 72.795319
+            },
+            "description": "Cluster of fishing villages and beaches with Portuguese‑era Madh Fort nearby."
+        }
+    ]
+}

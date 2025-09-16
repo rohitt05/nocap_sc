@@ -44,6 +44,12 @@ declare module "@expo/config" {
       eas: {
         projectId: string;
       };
+      // 🔧 FIXED: Changed from mapboxAccessToken to mapboxPublicToken to match app.config.ts
+      mapboxPublicToken?: string;
+      // 🔧 ADDED: buildVariant property that your app.config.ts sets
+      buildVariant?: string;
+      // Allow additional custom properties
+      [key: string]: any;
     };
     owner: string;
   };

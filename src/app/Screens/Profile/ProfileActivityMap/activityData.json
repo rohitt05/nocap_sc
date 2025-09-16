@@ -1,0 +1,104 @@
+{
+  "activityLocations": [
+    {
+      "id": "act_001",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "timestamp": 1734480000000,
+      "type": "photo",
+      "name": "Union Square",
+      "mediaUrl": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600",
+      "description": "Beautiful sunset at Union Square with street performers"
+    },
+    {
+      "id": "act_002", 
+      "latitude": 37.7759,
+      "longitude": -122.4184,
+      "timestamp": 1734390000000,
+      "type": "video",
+      "name": "Chinatown",
+      "mediaUrl": "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
+      "description": "Dragon dance celebration in Chinatown"
+    },
+    {
+      "id": "act_003",
+      "latitude": 37.7739,
+      "longitude": -122.4204,
+      "timestamp": 1734300000000,
+      "type": "photo", 
+      "name": "Financial District",
+      "mediaUrl": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&h=600",
+      "description": "Morning coffee and skyscrapers view"
+    },
+    {
+      "id": "act_004",
+      "latitude": 37.7769,
+      "longitude": -122.4174, 
+      "timestamp": 1734200000000,
+      "type": "video",
+      "name": "North Beach",
+      "mediaUrl": "https://file-examples.com/storage/febc8b9a28b8a8f76e0f6f6/2017/10/file_example_MP4_640_3MG.mp4",
+      "description": "Live jazz performance at local café"
+    },
+    {
+      "id": "act_005",
+      "latitude": 37.7729,
+      "longitude": -122.4214,
+      "timestamp": 1733900000000,
+      "type": "photo",
+      "name": "SOMA District", 
+      "mediaUrl": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600",
+      "description": "Modern architecture and urban art murals"
+    },
+    {
+      "id": "act_006",
+      "latitude": 37.7779,
+      "longitude": -122.4164,
+      "timestamp": 1733800000000,
+      "type": "video",
+      "name": "Russian Hill",
+      "mediaUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      "description": "Breathtaking city panorama from the hilltop"
+    },
+    {
+      "id": "act_007",
+      "latitude": 37.7849,
+      "longitude": -122.4094,
+      "timestamp": 1734460000000,
+      "type": "photo",
+      "name": "Fisherman's Wharf",
+      "mediaUrl": "https://images.unsplash.com/photo-1517457210247-4fd377abc2d7?w=800&h=600",
+      "description": "Fresh seafood and harbor seals"
+    },
+    {
+      "id": "act_008", 
+      "latitude": 37.8024,
+      "longitude": -122.4058,
+      "timestamp": 1734440000000,
+      "type": "video",
+      "name": "Alcatraz Island",
+      "mediaUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      "description": "Ferry ride to the historic prison island"
+    },
+    {
+      "id": "act_009",
+      "latitude": 37.7694,
+      "longitude": -122.4862,
+      "timestamp": 1734420000000,
+      "type": "photo",
+      "name": "Golden Gate Park", 
+      "mediaUrl": "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=600",
+      "description": "Cherry blossoms in full bloom"
+    },
+    {
+      "id": "act_010",
+      "latitude": 37.8199,
+      "longitude": -122.4783,
+      "timestamp": 1734400000000,
+      "type": "video",
+      "name": "Golden Gate Bridge",
+      "mediaUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      "description": "Iconic bridge covered in morning fog"
+    }
+  ]
+}

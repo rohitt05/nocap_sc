@@ -1,0 +1,70 @@
+[
+  {
+    "id": "1",
+    "name": "Emma Stone",
+    "username": "emma_stone",
+    "profilePic": "https://images.unsplash.com/photo-1494790108755-2616b612b829?w=400&h=400&fit=crop&crop=face",
+    "stories": [
+      {
+        "id": "story_1_1",
+        "type": "image",
+        "url": "https://static.wikia.nocookie.net/live-action/images/c/cc/Amanda_Crew.PNG/revision/latest?cb=20200812125035",
+        "uploadedTime": "2025-01-12T10:30:00Z",
+        "timestamp": 1736675400000,
+        "duration": 5000
+      },
+      {
+        "id": "story_1_2", 
+        "type": "video",
+        "url": "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+        "uploadedTime": "2025-01-12T10:35:00Z",
+        "timestamp": 1736675700000,
+        "duration": 15000
+      },
+      {
+        "id": "story_1_3",
+        "type": "image", 
+        "url": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=600&fit=crop",
+        "uploadedTime": "2025-01-12T10:40:00Z",
+        "timestamp": 1736676000000,
+        "duration": 5000
+      }
+    ],
+    "lastSeen": "2m ago",
+    "isOnline": true
+  },
+  {
+    "id": "2",
+    "name": "Margot Robbie",
+    "username": "margot_robbie", 
+    "profilePic": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
+    "stories": [
+      {
+        "id": "story_2_1",
+        "type": "video",
+        "url": "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+        "uploadedTime": "2025-01-12T09:45:00Z", 
+        "timestamp": 1736672700000,
+        "duration": 12000
+      },
+      {
+        "id": "story_2_2",
+        "type": "image",
+        "url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop",
+        "uploadedTime": "2025-01-12T09:50:00Z",
+        "timestamp": 1736673000000, 
+        "duration": 5000
+      },
+      {
+        "id": "story_2_3",
+        "type": "image",
+        "url": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=600&fit=crop",
+        "uploadedTime": "2025-01-12T09:55:00Z",
+        "timestamp": 1736673300000,
+        "duration": 5000
+      }
+    ],
+    "lastSeen": "15m ago",
+    "isOnline": true
+  }
+]

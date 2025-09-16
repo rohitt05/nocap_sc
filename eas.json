@@ -8,7 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "APP_VARIANT": "development"
+        "APP_VARIANT": "development",
+        "MAPBOX_DOWNLOAD_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw",
+        "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw"
       }
     },
     "ios-simulator": {
@@ -20,11 +22,18 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "APP_VARIANT": "preview"
+        "APP_VARIANT": "preview",
+        "MAPBOX_DOWNLOAD_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw",
+        "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw"
       },
       "autoIncrement": true
     },
     "production": {
+      "env": {
+        "APP_VARIANT": "production",
+        "MAPBOX_DOWNLOAD_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw",
+        "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw"
+      },
       "autoIncrement": true
     }
   },

@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: 20, // Reduced from 50 to 15
+        paddingTop: 10, // Reduced from 50 to 10
         paddingBottom: 8, // Reduced from 16 to 8
         backgroundColor: 'transparent',
         zIndex: 1000,

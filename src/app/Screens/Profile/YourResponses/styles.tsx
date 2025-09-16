@@ -31,19 +31,25 @@ export const styles = StyleSheet.create({
         paddingRight: 15,
         paddingLeft: 10,
     },
+    rowScrollView: {
+        height: 230,
+        marginBottom: 15,
+        overflow: 'visible',
+    },
     responseContainer: {
         marginRight: 15,
+        overflow: 'visible',
     },
     pinItem: {
-        width: 150,
+        width: 150, // All cards will be 150px wide
         borderRadius: 16,
         overflow: 'hidden',
         backgroundColor: '#1E1E1E',
     },
-    // Special style for text items to make them wider
+    // FIXED: Remove width override for text items - keep same width as other cards
     textPinItem: {
-        width: 380, // Wider to accommodate more text
-        height: 180, // Matching the height in TextResponse
+        // width: 380, // REMOVED this line
+        height: 180,
     },
     mediaPreviewContainer: {
         aspectRatio: 1,
@@ -56,6 +62,7 @@ export const styles = StyleSheet.create({
     dateContainer: {
         padding: 10,
         width: '100%',
+        overflow: 'visible',
     },
     promptHint: {
         color: '#AAA',
@@ -67,7 +74,7 @@ export const styles = StyleSheet.create({
         fontSize: 12,
     },
     addNewPin: {
-        width: 150,
+        width: 150, // Same size as regular pinned response cards
         height: 180,
         borderRadius: 16,
         borderWidth: 2,
@@ -76,7 +83,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 10,
-        marginRight: 20,
+        marginRight: 15,
     },
     addPinText: {
         color: '#888',
@@ -85,13 +92,13 @@ export const styles = StyleSheet.create({
         marginTop: 10,
     },
     loadingContainer: {
-        height: 180,
+        height: 250,
         justifyContent: 'center',
         alignItems: 'center',
     },
     emptyContainer: {
         width: 250,
-        height: 180,
+        height: 250,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -99,4 +106,5 @@ export const styles = StyleSheet.create({
         color: '#888',
         fontSize: 16,
     },
+
 });

@@ -1,509 +1,517 @@
-import { View, Text, Alert, Animated, TouchableOpacity, Keyboard, StatusBar, Dimensions } from 'react-native'
-import Mapbox, { Camera, LocationPuck, MapView, StyleURL, UserTrackingModes } from '@rnmapbox/maps'
-import React, { useEffect, useState, useRef } from 'react'
-import * as Location from 'expo-location'
-import { FontAwesome6 } from '@expo/vector-icons'
-import { Link } from 'expo-router'
-import { LinearGradient } from 'expo-linear-gradient'
-import SearchBar from './SearchBar'
-import BottomSheetMap from './BottomSheetMap'
-import MapFilters from './MapFilters'
+// Map.tsx - CLEAN VERSION with Albums Inactive by Default
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import MapboxGL from '../../../../MapboxGL';
+import * as Location from 'expo-location';
+import { FontAwesome5, MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import MapHeader from './MapHeader';
+import MapControls from './MapControls';
+import AlbumsOnMap from './AlbumsOnMap';
+import friendsData from './friends_data.json';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// ✅ SPACING FUNCTION - Prevents album overlap
+const spaceOutAlbums = (albums: any[], zoomLevel: number) => {
+    if (albums.length <= 1) return albums;
 
-const accessToken = 'pk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3Vic3dwNzAxZnUycXNsNjgwbnZkZjkifQ.mPD8CSkhwFA78k2IDUrVnw';
-Mapbox.setAccessToken(accessToken);
+    const minDistance = zoomLevel > 15 ? 0.0008 : 0.002;
+    const processedAlbums = [...albums];
 
-const Map: React.FC = () => {
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
-    const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [bottomSheetPosition, setBottomSheetPosition] = useState<'closed' | 'half' | 'full'>('closed');
-    const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
-    const [previousBottomSheetPosition, setPreviousBottomSheetPosition] = useState<'closed' | 'half' | 'full'>('closed');
-    const [selectedFilter, setSelectedFilter] = useState<string>('discover');
+    for (let i = 0; i < processedAlbums.length; i++) {
+        for (let j = i + 1; j < processedAlbums.length; j++) {
+            const album1 = processedAlbums[i];
+            const album2 = processedAlbums[j];
 
-    // Enhanced animations
-    const pulseAnimation = useRef(new Animated.Value(1)).current;
-    const filtersOpacity = useRef(new Animated.Value(1)).current;
-    const buttonScale = useRef(new Animated.Value(1)).current;
-    const loadingRotation = useRef(new Animated.Value(0)).current;
-    const mapOpacity = useRef(new Animated.Value(0)).current;
-    const cameraRef = useRef<Mapbox.Camera>(null);
+            const distance = Math.sqrt(
+                Math.pow(album1.location_latitude - album2.location_latitude, 2) +
+                Math.pow(album1.location_longitude - album2.location_longitude, 2)
+            );
 
-    useEffect(() => {
-        // Set status bar style
-        StatusBar.setBarStyle('light-content', true);
-        StatusBar.setBackgroundColor('#000000', true);
+            if (distance < minDistance) {
+                const angle = Math.random() * 2 * Math.PI;
+                const offset = minDistance * 1.2;
 
-        (async () => {
-            try {
-                // Request location permissions
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    setErrorMsg('Permission to access location was denied');
-                    Alert.alert('Permission Required', 'Location permission is required to show your position on the map');
-                    return;
-                }
-
-                setPermissionGranted(true);
-
-                // Get current location
-                let currentLocation = await Location.getCurrentPositionAsync({
-                    accuracy: Location.Accuracy.High,
-                });
-                setLocation(currentLocation);
-
-                // Fade in map once location is ready
-                Animated.timing(mapOpacity, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                }).start();
-
-            } catch (error) {
-                setErrorMsg('Error getting location');
-                console.error('Error getting location:', error);
+                processedAlbums[j] = {
+                    ...album2,
+                    location_latitude: album2.location_latitude + offset * Math.cos(angle),
+                    location_longitude: album2.location_longitude + offset * Math.sin(angle)
+                };
             }
-        })();
+        }
+    }
 
-        // Enhanced pulse animation
-        const startPulse = (): void => {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1.15,
-                        duration: 1200,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1,
-                        duration: 1200,
-                        useNativeDriver: true,
-                    }),
-                ])
-            ).start();
-        };
+    return processedAlbums;
+};
 
-        // Loading rotation animation
-        const startLoadingRotation = (): void => {
-            Animated.loop(
-                Animated.timing(loadingRotation, {
-                    toValue: 1,
-                    duration: 2000,
-                    useNativeDriver: true,
-                })
-            ).start();
-        };
+// Local imports from your utils
+import { LocationData, Friend, MapProps } from './types';
+import {
+    getWeatherIcon,
+    getCurrentUser,
+    getUserLocationSharingPreference,
+    getLocationQuickly,
+    createLocationUpdateHandler,
+    createGPSPressHandler,
+    createAlbumHandler,
+    createLocationSharingToggleHandler,
+    createAnimateToFriendHandler,
+    calculateCameraCoords,
+    calculateMarkerCoordinate,
+    getMapStyle,
+    getBirdsEyeZoomLevel,
+    fetchUserAlbums,
+    fetchWeatherData
+} from './utils';
+import { styles } from './styles';
+import MumbaiPOIOverlay from './MumbaiPOIOverlay';
 
-        startPulse();
-        startLoadingRotation();
+const SafeCamera = MapboxGL.Camera || (() => <></>);
+const SafeMarkerView = MapboxGL.MarkerView || (() => <></>);
+const SafePointAnnotation = MapboxGL.PointAnnotation || (() => <></>);
+
+interface MapPropsExtended extends MapProps {
+    onAlbumCreated?: () => void;
+}
+
+const Map: React.FC<MapPropsExtended> = React.memo(({
+    onLocationUpdate,
+    style,
+    zoomLevel = 14,
+    isFullScreen = false,
+    onClose,
+    onCreateAlbum,
+    onAlbumCreated
+}) => {
+    // State management
+    const [location, setLocation] = useState<Location.LocationObject | null>(null);
+    const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isUserInteracting, setIsUserInteracting] = useState<boolean>(false);
+    const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+    const [locationSharingEnabled, setLocationSharingEnabled] = useState<boolean>(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    // Album and Friends visibility controls
+    const [albums, setAlbums] = useState<any[]>([]);
+    const [isLoadingAlbums, setIsLoadingAlbums] = useState(false);
+    const [showAlbums, setShowAlbums] = useState(false); // ✅ CHANGED: Albums inactive by default
+    const [showFriends, setShowFriends] = useState(false);
+
+    // ✅ Track zoom for spacing algorithm
+    const [currentZoomLevel, setCurrentZoomLevel] = useState(zoomLevel);
+
+    // ✅ Weather data state
+    const [weatherData, setWeatherData] = useState<any>(null);
+    const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+
+    // Map ready state
+    const [mapReady, setMapReady] = useState(false);
+
+    const cameraRef = useRef<any>(null);
+    const friends: Friend[] = friendsData;
+
+    // Map initialization delay
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMapReady(true);
+            console.log('🗺️ Map ready state set to true');
+        }, 800);
+        return () => clearTimeout(timer);
     }, []);
 
-    const handleLocationPress = async (): Promise<void> => {
-        // Button press animation
-        Animated.sequence([
-            Animated.timing(buttonScale, {
-                toValue: 0.95,
-                duration: 100,
-                useNativeDriver: true,
-            }),
-            Animated.timing(buttonScale, {
-                toValue: 1,
-                duration: 100,
-                useNativeDriver: true,
-            }),
-        ]).start();
-
+    // Load albums function
+    const loadAlbums = useCallback(async () => {
+        if (!isFullScreen) return;
         try {
-            const currentLocation = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.High,
-            });
-            setLocation(currentLocation);
-
-            // Subtle success feedback
-            Alert.alert('📍 Location Updated', 'Map centered to your current location');
+            setIsLoadingAlbums(true);
+            const userAlbums = await fetchUserAlbums();
+            setAlbums(userAlbums);
+            console.log('📂 Loaded albums on map:', userAlbums.length);
         } catch (error) {
-            Alert.alert('⚠️ Error', 'Could not get your current location');
-            console.error('Error getting location:', error);
+            console.error('❌ Error loading albums:', error);
+        } finally {
+            setIsLoadingAlbums(false);
         }
-    };
+    }, [isFullScreen]);
 
-    const handleSearch = async (query: string): Promise<void> => {
+    // ✅ Load weather data using your utils function
+    const loadWeatherData = useCallback(async () => {
+        if (!location || !isFullScreen) return;
         try {
-            const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${accessToken}&limit=1`
+            setIsLoadingWeather(true);
+            const weather = await fetchWeatherData(
+                location.coords.latitude,
+                location.coords.longitude
             );
-            const data = await response.json();
-
-            if (data.features && data.features.length > 0) {
-                const feature = data.features[0];
-                const [longitude, latitude] = feature.center;
-
-                setSearchResults([feature]);
-                Alert.alert('🎯 Location Found', `Found: ${feature.place_name}`);
-
-                // Move camera to searched location
-                if (cameraRef.current) {
-                    cameraRef.current.setCamera({
-                        centerCoordinate: [longitude, latitude],
-                        zoomLevel: 15,
-                        animationDuration: 1000,
-                    });
-                }
-            } else {
-                Alert.alert('🔍 No Results', 'No locations found for your search');
+            if (weather) {
+                setWeatherData(weather);
+                console.log('🌤️ Weather data loaded successfully:', weather.main.temp + '°C');
             }
         } catch (error) {
-            Alert.alert('❌ Search Error', 'Could not search for location');
-            console.error('Search error:', error);
+            console.error('❌ Error loading weather:', error);
+        } finally {
+            setIsLoadingWeather(false);
         }
-    };
+    }, [location, isFullScreen]);
 
-    const handleBottomSheetPositionChange = (position: 'closed' | 'half' | 'full'): void => {
-        setBottomSheetPosition(position);
+    // ✅ Spaced out albums to prevent overlap
+    const spacedAlbums = useMemo(() => {
+        return spaceOutAlbums(albums, currentZoomLevel);
+    }, [albums, currentZoomLevel]);
 
-        if (!isSearchFocused) {
-            setPreviousBottomSheetPosition(position);
-        }
-
-        // Smooth filters opacity animation
-        const targetOpacity = position === 'full' ? 0 : 1;
-        Animated.timing(filtersOpacity, {
-            toValue: targetOpacity,
-            duration: 250,
-            useNativeDriver: true,
-        }).start();
-
-        // Adjust camera position based on bottom sheet state
-        if (location && cameraRef.current) {
-            const { latitude, longitude } = location.coords;
-            let adjustedLatitude = latitude;
-
-            if (position === 'half') {
-                adjustedLatitude = latitude + 0.015;
+    // User initialization
+    useEffect(() => {
+        const initializeUser = async () => {
+            const userId = await getCurrentUser();
+            if (userId) {
+                setCurrentUserId(userId);
+                const preference = await getUserLocationSharingPreference(userId);
+                setLocationSharingEnabled(preference);
             }
+        };
+        initializeUser();
+    }, []);
 
-            cameraRef.current.setCamera({
-                centerCoordinate: [longitude, adjustedLatitude],
-                zoomLevel: 15,
-                animationDuration: 400,
-            });
+    useEffect(() => {
+        if (isFullScreen) {
+            loadAlbums();
+            loadWeatherData();
         }
-    };
+    }, [isFullScreen, loadAlbums, loadWeatherData]);
 
-    const handleSearchFocus = (): void => {
-        setIsSearchFocused(true);
-        setPreviousBottomSheetPosition(bottomSheetPosition);
-
-        Animated.timing(filtersOpacity, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const handleSearchBlur = (): void => {
-        setIsSearchFocused(false);
-        const targetOpacity = previousBottomSheetPosition === 'full' ? 0 : 1;
-
-        Animated.timing(filtersOpacity, {
-            toValue: targetOpacity,
-            duration: 150,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const handleMapPress = (): void => {
-        if (isSearchFocused) {
-            Keyboard.dismiss();
-            setIsSearchFocused(false);
+    React.useEffect(() => {
+        if (onAlbumCreated) {
+            console.log('📂 Album created callback received, refreshing albums...');
+            loadAlbums();
         }
-    };
+    }, [onAlbumCreated]);
 
-    const handleFilterSelect = (filter: string): void => {
-        setSelectedFilter(filter);
-        console.log('Filter selected:', filter);
-    };
-
-    const handleDiscoverOptionSelect = (option: string): void => {
-        console.log('Discover option selected:', option);
-        if (option === 'map-settings') {
-            Alert.alert('⚙️ Map Settings', 'Map settings would open here');
-        } else if (option === 'bucketlist') {
-            Alert.alert('📋 My Bucketlist', 'Your bucketlist would open here');
+    // Load weather when location changes
+    useEffect(() => {
+        if (location && isFullScreen) {
+            loadWeatherData();
         }
-    };
+    }, [location, loadWeatherData, isFullScreen]);
 
-    const spin = loadingRotation.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-    });
+    // ✅ USING UTILS: Create handlers using your util functions
+    const handleLocationUpdate = useMemo(() =>
+        createLocationUpdateHandler(onLocationUpdate, currentUserId),
+        [onLocationUpdate, currentUserId]
+    );
+
+    const handleGPSPress = useMemo(() =>
+        createGPSPressHandler(location, cameraRef),
+        [location]
+    );
+
+    const handleCreateAlbum = useMemo(() =>
+        createAlbumHandler(location, onClose, onCreateAlbum),
+        [location, onClose, onCreateAlbum]
+    );
+
+    const handleLocationSharingToggle = useMemo(() =>
+        createLocationSharingToggleHandler(currentUserId, locationSharingEnabled, setLocationSharingEnabled),
+        [currentUserId, locationSharingEnabled]
+    );
+
+    const animateToFriend = useMemo(() =>
+        createAnimateToFriendHandler(cameraRef, setSelectedFriendId),
+        [cameraRef]
+    );
+
+    const handleAlbumPress = useCallback((album: any) => {
+        console.log('📂 Album pressed for detailed view:', album.name);
+    }, []);
+
+    const handleAlbumLongPress = useCallback((album: any) => {
+        console.log('📂 Album long pressed for options:', album.name);
+    }, []);
+
+    const handleAlbumsToggle = useCallback(() => {
+        setShowAlbums(prev => {
+            const newState = !prev;
+            console.log(`📂 Albums visibility: ${newState ? 'ON' : 'OFF'}`);
+            return newState;
+        });
+    }, []);
+
+    const handleFriendsToggle = useCallback(() => {
+        setShowFriends(prev => {
+            const newState = !prev;
+            console.log(`👥 Friends visibility: ${newState ? 'ON' : 'OFF'}`);
+            return newState;
+        });
+    }, []);
+
+    // ✅ FIXED: Use onMapIdle instead of deprecated onRegionDidChange
+    const handleMapIdle = useCallback((state: any) => {
+        if (state && state.properties && state.properties.zoom !== currentZoomLevel) {
+            setCurrentZoomLevel(state.properties.zoom);
+            console.log('🗺️ Map zoom level changed:', state.properties.zoom);
+        }
+    }, [currentZoomLevel]);
+
+    // ✅ USING UTILS: Computed values from your utils
+    const cameraCoords = useMemo(() => calculateCameraCoords(location), [location]);
+    const markerCoordinate = useMemo(() => calculateMarkerCoordinate(location), [location]);
+    const mapStyle = useMemo(() => getMapStyle(), []);
+    const birdsEyeZoomLevel = useMemo(() => getBirdsEyeZoomLevel(isFullScreen, zoomLevel), [isFullScreen, zoomLevel]);
+
+    // ✅ USING UTILS: Location initialization
+    useEffect(() => {
+        let isMounted = true;
+        if (isMounted) {
+            getLocationQuickly(
+                setLocation,
+                setPermissionGranted,
+                setIsLoading,
+                setError,
+                handleLocationUpdate
+            );
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [handleLocationUpdate]);
+
+    // Location watching
+    useEffect(() => {
+        if (!isFullScreen || !permissionGranted || isLoading) return;
+
+        let locationSubscription: Location.LocationSubscription | null = null;
+        let isMounted = true;
+
+        const watchLocation = async () => {
+            try {
+                locationSubscription = await Location.watchPositionAsync(
+                    {
+                        accuracy: Location.Accuracy.Balanced,
+                        timeInterval: 10000,
+                        distanceInterval: 50,
+                    },
+                    (newLocation) => {
+                        if (isMounted && newLocation) {
+                            setLocation(newLocation);
+                            handleLocationUpdate({
+                                latitude: newLocation.coords.latitude,
+                                longitude: newLocation.coords.longitude,
+                                timestamp: newLocation.timestamp,
+                                accuracy: newLocation.coords.accuracy || undefined
+                            });
+                        }
+                    }
+                );
+            } catch (error) {
+                console.log('Error watching location:', error);
+            }
+        };
+
+        const watchTimer = setTimeout(watchLocation, 2000);
+
+        return () => {
+            isMounted = false;
+            if (locationSubscription) {
+                locationSubscription.remove();
+            }
+            if (watchTimer) {
+                clearTimeout(watchTimer);
+            }
+        };
+    }, [permissionGranted, isLoading, handleLocationUpdate, isFullScreen]);
+
+    // Early returns
+    if (isLoading && !location) {
+        return (
+            <View style={[styles.container, styles.centerContent, style]}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.loadingText}>
+                    Loading...
+                </Text>
+            </View>
+        );
+    }
+
+    if (error && !location) {
+        return (
+            <View style={[styles.container, styles.centerContent, style]}>
+                <Text style={styles.errorText}>{error || 'No location'}</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={{
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            flex: 1,
-            backgroundColor: '#000000',
-        }}>
-            <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <View style={[styles.container, style]}>
+            <MapHeader
+                isVisible={isFullScreen}
+                onClose={onClose}
+            />
 
-            {permissionGranted ? (
-                <>
-                    {/* Enhanced Map View with fade-in animation */}
-                    <Animated.View style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        opacity: mapOpacity,
-                    }}>
-                        <MapView
-                            style={{
-                                flex: 1,
-                                zIndex: 1,
-                            }}
-                            styleURL="mapbox://styles/mapbox/dark-v11"
-                            compassEnabled={false}
-                            scaleBarEnabled={false}
-                            attributionEnabled={false}
-                            showUserLocation={true}
-                            userTrackingMode={UserTrackingModes.None}
-                            rotateEnabled={true}
-                            pitchEnabled={true}
-                            scrollEnabled={true}
-                            zoomEnabled={true}
-                            logoEnabled={false}
-                            onPress={handleMapPress}
-                        >
-                            {location && (
-                                <Camera
-                                    ref={cameraRef}
-                                    followUserLocation={false}
-                                    zoomLevel={15}
-                                    animationDuration={1000}
-                                    centerCoordinate={[
-                                        location.coords.longitude,
-                                        bottomSheetPosition === 'half'
-                                            ? location.coords.latitude + 0.015
-                                            : location.coords.latitude
-                                    ]}
+            {mapReady && (
+                <MapboxGL.MapView
+                    key="mapbox-view-stable"
+                    style={styles.map}
+                    styleURL={mapStyle}
+                    logoEnabled={false}
+                    scaleBarEnabled={false}
+                    attributionEnabled={false}
+                    compassEnabled={false}
+                    pitchEnabled={false}
+                    rotateEnabled={false}
+                    scrollEnabled={true}
+                    zoomEnabled={true}
+                    localizeLabels={false}
+                    preferredFramesPerSecond={60}
+                    optimizeForTerrain={true}
+                    surfaceView={true}
+                    renderWorldCopies={false}
+                    maxZoomLevel={18}
+                    minZoomLevel={8}
+                    onTouchStart={() => setIsUserInteracting(true)}
+                    onTouchEnd={() => setTimeout(() => setIsUserInteracting(false), 1000)}
+                    onMapIdle={handleMapIdle} // ✅ FIXED: Using onMapIdle instead of deprecated onRegionDidChange
+                >
+                    <SafeCamera
+                        ref={cameraRef}
+                        centerCoordinate={cameraCoords}
+                        zoomLevel={birdsEyeZoomLevel}
+                        animationDuration={800}
+                        animationMode="flyTo"
+                        followUserLocation={false}
+                        followUserMode="normal"
+                    />
+                    {/* <MumbaiPOIOverlay /> */}
+
+                    {/* ✅ Your existing location marker */}
+                    <SafeMarkerView
+                        coordinate={markerCoordinate}
+                        allowOverlapWithPuck={true}
+                    >
+                        <View style={styles.locationMarkerContainer}>
+                            <Text style={styles.youAreHereText}>you are here rn</Text>
+                            <View style={styles.locationMarker}>
+                                <FontAwesome5
+                                    name="location-arrow"
+                                    size={isFullScreen ? 24 : 18}
+                                    color="#000"
+                                    solid
                                 />
-                            )}
+                            </View>
+                        </View>
+                    </SafeMarkerView>
 
-                            <LocationPuck
-                                puckBearing="heading"
-                                puckBearingEnabled={true}
-                                pulsing={{
-                                    isEnabled: true,
-                                    color: '#FFFFFF',
-                                    radius: 80
-                                }}
-                                visible={true}
-                            />
-                        </MapView>
-                    </Animated.View>
+                    {/* ✅ Your existing friends markers */}
+                    {showFriends && friends.map((friend) => (
+                        <SafePointAnnotation
+                            key={`friend-${friend.id}`}
+                            id={`friend-${friend.id}`}
+                            coordinate={[friend.location.longitude, friend.location.latitude]}
+                        >
+                            <TouchableOpacity
+                                style={[
+                                    styles.friendMarker,
+                                    selectedFriendId === friend.id && styles.selectedFriendMarker
+                                ]}
+                                onPress={() => animateToFriend(friend)}
+                            >
+                                <Image
+                                    source={{ uri: friend.profile_pic }}
+                                    style={styles.friendProfilePic}
+                                />
+                                <View style={[
+                                    styles.storyIndicator,
+                                    friend.story.type === 'video' ? styles.videoStory : styles.photoStory
+                                ]}>
+                                    <MaterialIcons
+                                        name={friend.story.type === 'video' ? 'videocam' : 'camera-alt'}
+                                        size={8}
+                                        color="white"
+                                    />
+                                </View>
+                            </TouchableOpacity>
+                        </SafePointAnnotation>
+                    ))}
 
-                    {/* Enhanced Search Bar with gradient background */}
-                    <View style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        zIndex: 100,
-                        pointerEvents: 'box-none',
-                    }}>
-                        <LinearGradient
-                            colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)', 'transparent']}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: 120,
-                                zIndex: -1,
-                            }}
-                        />
-                        <SearchBar
-                            onLocationPress={handleLocationPress}
-                            onSearch={handleSearch}
-                            onFocus={handleSearchFocus}
-                            onBlur={handleSearchBlur}
-                        />
-                    </View>
+                    {/* ✅ Albums with proper spacing */}
+                    <AlbumsOnMap
+                        albums={spacedAlbums}
+                        showAlbums={showAlbums}
+                        onAlbumPress={handleAlbumPress}
+                        onAlbumLongPress={handleAlbumLongPress}
+                    />
+                </MapboxGL.MapView>
+            )}
 
-                    {/* Enhanced Floating Bookmark Button */}
-                    <View style={{
-                        position: 'absolute',
-                        top: 85,
-                        right: 15,
-                        zIndex: 90,
-                        pointerEvents: 'box-none',
-                    }}>
-                        <Link href="/Screens/Map/MyChecklist" asChild>
-                            <Animated.View style={{
-                                transform: [{ scale: buttonScale }],
-                            }}>
-                                <TouchableOpacity
-                                    style={{
-                                        width: 52,
-                                        height: 52,
-                                        borderRadius: 26,
-                                        backgroundColor: 'rgba(0,0,0,0.9)',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
+            {!mapReady && (
+                <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }]}>
+                    <ActivityIndicator size="large" color="#007AFF" />
+                    <Text style={{ marginTop: 10, color: '#666' }}>Initializing Map...</Text>
+                </View>
+            )}
 
-                                    }}
-                                    activeOpacity={0.8}
-                                    onPress={() => {
-                                        // Button press animation
-                                        Animated.sequence([
-                                            Animated.timing(buttonScale, {
-                                                toValue: 0.9,
-                                                duration: 100,
-                                                useNativeDriver: true,
-                                            }),
-                                            Animated.timing(buttonScale, {
-                                                toValue: 1,
-                                                duration: 100,
-                                                useNativeDriver: true,
-                                            }),
-                                        ]).start();
-                                    }}
-                                >
-                                    <FontAwesome6 name="box-archive" size={20} color="#FFFFFF" />
-                                </TouchableOpacity>
-                            </Animated.View>
-                        </Link>
-                    </View>
-
-                    {/* Enhanced Filters with smooth animations */}
-                    <Animated.View style={{
-                        position: 'absolute',
-                        bottom: bottomSheetPosition === 'closed' ? 200 :
-                            bottomSheetPosition === 'half' ? 450 : 740,
-                        left: 0,
-                        right: 0,
-                        zIndex: 75,
-                        pointerEvents: 'box-none',
-                        opacity: filtersOpacity,
-                    }}>
-                        <View>
-                            <LinearGradient
-                                colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)']}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: 80,
-                                    zIndex: -1,
-                                }}
-                            />
-                            <MapFilters
-                                onFilterSelect={handleFilterSelect}
-                                onDiscoverOptionSelect={handleDiscoverOptionSelect}
+            {/* ✅ Weather Data Overlay */}
+            {weatherData && isFullScreen && (
+                <View style={styles.weatherInfo}>
+                    <View style={styles.weatherTopRow}>
+                        <View style={styles.weatherIcon}>
+                            <MaterialCommunityIcons
+                                name={getWeatherIcon(weatherData.weather[0].main.toLowerCase())}
+                                size={24}
+                                color="white"
                             />
                         </View>
-                    </Animated.View>
-
-                    {/* Enhanced Bottom Sheet */}
-                    <View style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        zIndex: 50,
-                        pointerEvents: 'auto',
-                    }}>
-                        <BottomSheetMap
-                            onPositionChange={handleBottomSheetPositionChange}
-                            title="Map Information"
-                            forcePosition={isSearchFocused ? 'hidden' : previousBottomSheetPosition}
-                            location={location}
-                            selectedFilter={selectedFilter}
-                            searchResults={searchResults}
-                            onLocationPress={handleLocationPress}
-                        />
+                        <Text style={styles.weatherTemp}>
+                            {Math.round(weatherData.main.temp)}°
+                        </Text>
                     </View>
-                </>
-            ) : (
-                // Enhanced loading screen
-                <View style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#000000',
-                    paddingHorizontal: 40,
-                }}>
-                    <Animated.View style={{
-                        transform: [
-                            { scale: pulseAnimation },
-                            { rotate: spin }
-                        ],
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                        borderRadius: 60,
-                        padding: 25,
-                        marginBottom: 30,
-                        borderWidth: 2,
-                        borderColor: 'rgba(255,255,255,0.2)',
-                    }}>
-                        <Text style={{
-                            color: '#FFFFFF',
-                            fontSize: 32,
-                            textAlign: 'center',
-                        }}>📍</Text>
-                    </Animated.View>
-
-                    <Text style={{
-                        color: '#FFFFFF',
-                        fontSize: 22,
-                        fontWeight: '700',
-                        textAlign: 'center',
-                        marginBottom: 12,
-                        letterSpacing: 0.5,
-                    }}>
-                        {errorMsg || 'Getting your location...'}
+                    <Text style={styles.weatherDescription}>
+                        {weatherData.weather[0].description}
                     </Text>
+                </View>
+            )}
 
-                    <Text style={{
-                        color: 'rgba(255,255,255,0.7)',
-                        fontSize: 15,
-                        textAlign: 'center',
-                        lineHeight: 22,
-                        fontWeight: '400',
-                    }}>
-                        We need location access to show you the map
-                    </Text>
+            {/* ✅ Weather Loading Indicator */}
+            {isLoadingWeather && isFullScreen && (
+                <View style={[styles.weatherInfo, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                </View>
+            )}
 
-                    {/* Loading dots animation */}
-                    <View style={{
-                        flexDirection: 'row',
-                        marginTop: 20,
-                        justifyContent: 'center',
-                    }}>
-                        {[0, 1, 2].map((i) => (
-                            <Animated.View
-                                key={i}
-                                style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: 'rgba(255,255,255,0.5)',
-                                    marginHorizontal: 4,
-                                    opacity: pulseAnimation,
-                                }}
-                            />
-                        ))}
-                    </View>
+            {/* ✅ Map Controls */}
+            <MapControls
+                isFullScreen={isFullScreen}
+                locationSharingEnabled={locationSharingEnabled}
+                showAlbums={showAlbums}
+                showFriends={showFriends}
+                onGPSPress={handleGPSPress}
+                onLocationSharingToggle={handleLocationSharingToggle}
+                onAlbumsToggle={handleAlbumsToggle}
+                onFriendsToggle={handleFriendsToggle}
+            />
+
+            {/* ✅ Create Album Button */}
+            {isFullScreen && (
+                <View style={styles.bottomButtonContainer}>
+                    <TouchableOpacity
+                        style={styles.liquidGlassButton}
+                        onPress={handleCreateAlbum}
+                        activeOpacity={0.9}
+                    >
+                        <Text style={styles.liquidGlassText}>Create Album</Text>
+                        <Ionicons name="add" size={20} color="rgba(255, 255, 255, 0.9)" />
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* ✅ Album Loading Indicator */}
+            {isLoadingAlbums && isFullScreen && (
+                <View style={styles.albumLoadingIndicator}>
+                    <ActivityIndicator size="small" color="#FF6B6B" />
+                    <Text style={styles.albumLoadingText}>Loading albums...</Text>
                 </View>
             )}
         </View>
     );
-}
+});
 
+Map.displayName = 'Map';
 export default Map;

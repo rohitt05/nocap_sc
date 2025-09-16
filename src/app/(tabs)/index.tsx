@@ -1,6 +1,23 @@
-import { View, StyleSheet, Text, SafeAreaView, Animated, RefreshControl, Dimensions } from 'react-native';
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import {
+    View,
+    StyleSheet,
+    Text,
+    SafeAreaView,
+    Animated,
+    RefreshControl,
+    Dimensions,
+} from 'react-native';
+import React, {
+    useRef,
+    useState,
+    useCallback,
+    useEffect,
+} from 'react';
+import {
+    GestureHandlerRootView,
+    PanGestureHandler,
+    State,
+} from 'react-native-gesture-handler';
 import Prompt from '../../components/prompts';
 import { useNavigation } from '@react-navigation/native';
 import { HomeHeader } from '../../components/Header/Header';
@@ -8,45 +25,42 @@ import Responses from '../../components/responses/responses';
 import NoResponse from '../../components/NoResponse';
 import { loadPromptAndCheckResponse } from '../../../API/checkPromptResponse';
 import { useNotifications } from '../context/NotificationContext';
+import { useTabBar } from '../context/TabBarContext'; // Import the context
 import Whisper from '../Screens/whisper';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const HomeScreen = () => {
     const { notification, expoPushToken, error } = useNotifications();
+    const { hideTabBar, showTabBar } = useTabBar(); // Use the context
 
-    // Log the Expo push token when it changes
-    useEffect(() => {
-        console.log('Expo Push Token:', expoPushToken);
-    }, [expoPushToken]);
-
-    // Create an animated value for scroll position
     const scrollY = useRef(new Animated.Value(0)).current;
-
-    // Animated values for drawer
     const translateX = useRef(new Animated.Value(0)).current;
     const drawerOpacity = useRef(new Animated.Value(0)).current;
+
     const [drawerVisible, setDrawerVisible] = useState(false);
-
-    // State for refresh control
     const [refreshing, setRefreshing] = useState(false);
-
-    // State to track if user has responded to current prompt
     const [hasResponded, setHasResponded] = useState(false);
-
-    // State to store current prompt ID
     const [currentPromptId, setCurrentPromptId] = useState(null);
-
-    // State for loading status
     const [loading, setLoading] = useState(true);
-
-    // Get navigation to update the header with our animated value
-    const navigation = useNavigation();
-
-    // Use a key to force Responses component to re-mount and fetch new data
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Load prompt data and check response status
+    const navigation = useNavigation();
+
+    /* ──────────────────────────────────────────
+       DIRECT TAB BAR CONTROL - THIS WILL WORK!
+    ─────────────────────────────────────────── */
+    useEffect(() => {
+        if (drawerVisible) {
+            console.log('🚫 HomeScreen: Hiding tab bar because drawer is visible');
+            hideTabBar();
+        } else {
+            console.log('✅ HomeScreen: Showing tab bar because drawer is hidden');
+            showTabBar();
+        }
+    }, [drawerVisible, hideTabBar, showTabBar]);
+    /* ────────────────────────────────────────── */
+
     const loadPromptData = async () => {
         try {
             setLoading(true);
@@ -60,13 +74,12 @@ const HomeScreen = () => {
         }
     };
 
-    // Handle refresh function
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
             await loadPromptData();
-            setRefreshKey(prevKey => prevKey + 1);
-            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for better UX
+            setRefreshKey((prevKey) => prevKey + 1);
+            await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (error) {
             console.error('Error refreshing:', error);
         } finally {
@@ -74,20 +87,17 @@ const HomeScreen = () => {
         }
     }, []);
 
-    // Initial load
     useEffect(() => {
         loadPromptData();
     }, []);
 
-    // Update header with the scrollY value and drawer state
     useEffect(() => {
         navigation.setOptions({
-            headerShown: !drawerVisible, // Hide header when drawer is visible
+            headerShown: !drawerVisible,
             headerTitle: () => <HomeHeader scrollY={scrollY} />,
         });
     }, [navigation, scrollY, drawerVisible]);
 
-    // Handle pan gesture for drawer
     const onGestureEvent = Animated.event(
         [{ nativeEvent: { translationX: translateX } }],
         { useNativeDriver: true }
@@ -96,12 +106,10 @@ const HomeScreen = () => {
     const onHandlerStateChange = (event: any) => {
         if (event.nativeEvent.oldState === State.ACTIVE) {
             const { translationX, velocityX } = event.nativeEvent;
-
-            // More lenient thresholds for opening drawer (swipe right)
             const shouldOpen = translationX > 50 || velocityX > 500;
 
             if (shouldOpen) {
-                // Open drawer
+                console.log('🚀 Opening drawer - tab bar should hide now');
                 setDrawerVisible(true);
                 Animated.parallel([
                     Animated.timing(translateX, {
@@ -116,29 +124,13 @@ const HomeScreen = () => {
                     }),
                 ]).start();
             } else {
-                // Close drawer
-                Animated.parallel([
-                    Animated.timing(translateX, {
-                        toValue: 0,
-                        duration: 250,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(drawerOpacity, {
-                        toValue: 0,
-                        duration: 250,
-                        useNativeDriver: true,
-                    }),
-                ]).start(() => {
-                    if (!shouldOpen) {
-                        setDrawerVisible(false);
-                    }
-                });
+                closeDrawer();
             }
         }
     };
 
-    // Close drawer function
     const closeDrawer = () => {
+        console.log('🔙 Closing drawer - tab bar should show now');
         Animated.parallel([
             Animated.timing(translateX, {
                 toValue: 0,
@@ -171,7 +163,7 @@ const HomeScreen = () => {
                         styles.mainContainer,
                         {
                             transform: [{ translateX }],
-                        }
+                        },
                     ]}
                 >
                     <SafeAreaView style={styles.container}>
@@ -187,7 +179,7 @@ const HomeScreen = () => {
                                     refreshing={refreshing}
                                     onRefresh={onRefresh}
                                     tintColor="#6441A5"
-                                    colors={["white"]}
+                                    colors={['white']}
                                     progressBackgroundColor="#000"
                                 />
                             }
@@ -208,14 +200,13 @@ const HomeScreen = () => {
                 </Animated.View>
             </PanGestureHandler>
 
-            {/* Drawer Screen */}
             {drawerVisible && (
                 <Animated.View
                     style={[
                         styles.drawerContainer,
                         {
                             opacity: drawerOpacity,
-                        }
+                        },
                     ]}
                 >
                     <Whisper onClose={closeDrawer} />
@@ -247,12 +238,6 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontSize: 16,
         textAlign: 'center',
-    },
-    errorText: {
-        color: 'red',
-        fontSize: 16,
-        textAlign: 'center',
-        padding: 20,
     },
     drawerContainer: {
         position: 'absolute',

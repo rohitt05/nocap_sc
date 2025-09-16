@@ -9,7 +9,7 @@ import {
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const AddAPlace: React.FC = () => {
+const hostAEvent: React.FC = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -119,4 +119,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AddAPlace;
+export default hostAEvent;

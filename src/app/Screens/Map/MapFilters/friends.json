@@ -1,0 +1,92 @@
+{
+    "friends": [
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440001",
+            "name": "Alex Johnson",
+            "username": "alexj_explorer",
+            "profile_pic": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0760,
+            "current_longitude": 72.8777,
+            "location_updated_at": "2025-01-17T10:30:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440002",
+            "name": "Sarah Chen",
+            "username": "sarahc_wanderer",
+            "profile_pic": "https://images.unsplash.com/photo-1494790108755-2616b9a51c9c?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0896,
+            "current_longitude": 72.8656,
+            "location_updated_at": "2025-01-17T09:45:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440003",
+            "name": "Marcus Rodriguez",
+            "username": "marcus_travels",
+            "profile_pic": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0330,
+            "current_longitude": 72.8570,
+            "location_updated_at": "2025-01-17T11:15:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440004",
+            "name": "Priya Sharma",
+            "username": "priya_discoverer",
+            "profile_pic": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.1197,
+            "current_longitude": 72.8464,
+            "location_updated_at": "2025-01-17T08:20:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440005",
+            "name": "David Kim",
+            "username": "david_explorer",
+            "profile_pic": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0176,
+            "current_longitude": 72.8562,
+            "location_updated_at": "2025-01-17T12:00:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440006",
+            "name": "Emma Thompson",
+            "username": "emma_adventures",
+            "profile_pic": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0728,
+            "current_longitude": 72.8126,
+            "location_updated_at": "2025-01-17T07:30:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440007",
+            "name": "Raj Patel",
+            "username": "raj_nomad",
+            "profile_pic": "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0822,
+            "current_longitude": 72.8267,
+            "location_updated_at": "2025-01-17T13:45:00Z",
+            "location_sharing_enabled": true,
+            "status": "accepted"
+        },
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440008",
+            "name": "Lisa Wang",
+            "username": "lisa_roamer",
+            "profile_pic": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face",
+            "current_latitude": 19.0544,
+            "current_longitude": 72.8302,
+            "location_updated_at": "2025-01-17T14:10:00Z",
+            "location_sharing_enabled": false,
+            "status": "accepted"
+        }
+    ]
+}

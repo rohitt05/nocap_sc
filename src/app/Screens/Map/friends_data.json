@@ -1,0 +1,114 @@
+[
+    {
+        "id": "1",
+        "name": "Yogesh Marol",
+        "username": "yogesh_marol",
+        "location": {
+            "latitude": 19.0992,
+            "longitude": 72.8469,
+            "name": "Marol, Andheri East"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/1.jpg",
+        "story": {
+            "type": "photo",
+            "url": "https://picsum.photos/400/600?random=1",
+            "timestamp": 1734780152000
+        }
+    },
+    {
+        "id": "2",
+        "name": "Ganesh",
+        "username": "ganesh_09",
+        "location": {
+            "latitude": 19.0869,
+            "longitude": 72.8765,
+            "name": "Powai"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/2.jpg",
+        "story": {
+            "type": "video",
+            "url": "https://sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4",
+            "timestamp": 1734776552000
+        }
+    },
+    {
+        "id": "3",
+        "name": "Ambedkar",
+        "username": "ambedkar_nagar",
+        "location": {
+            "latitude": 19.0937,
+            "longitude": 72.8685,
+            "name": "Ambedkar Nagar"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/3.jpg",
+        "story": {
+            "type": "photo",
+            "url": "https://picsum.photos/400/600?random=2",
+            "timestamp": 1734772952000
+        }
+    },
+    {
+        "id": "4",
+        "name": "Andre",
+        "username": "andre_ae",
+        "location": {
+            "latitude": 19.1090,
+            "longitude": 72.8562,
+            "name": "Andheri East"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/4.jpg",
+        "story": {
+            "type": "video",
+            "url": "https://sample-videos.com/video/vid.mp4",
+            "timestamp": 1734769352000
+        }
+    },
+    {
+        "id": "5",
+        "name": "Ashirwad",
+        "username": "ashirwad_dom",
+        "location": {
+            "latitude": 19.2173,
+            "longitude": 73.0583,
+            "name": "Dombivali"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/5.jpg",
+        "story": {
+            "type": "photo",
+            "url": "https://picsum.photos/400/600?random=3",
+            "timestamp": 1734765752000
+        }
+    },
+    {
+        "id": "6",
+        "name": "Salman Khan",
+        "username": "salman_bandra",
+        "location": {
+            "latitude": 19.0596,
+            "longitude": 72.8295,
+            "name": "Bandra"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/6.jpg",
+        "story": {
+            "type": "photo",
+            "url": "https://picsum.photos/400/600?random=4",
+            "timestamp": 1734762152000
+        }
+    },
+    {
+        "id": "7",
+        "name": "SRK",
+        "username": "srk_bandstand",
+        "location": {
+            "latitude": 19.0544,
+            "longitude": 72.8181,
+            "name": "Bandstand, Bandra"
+        },
+        "profile_pic": "https://randomuser.me/api/portraits/men/7.jpg",
+        "story": {
+            "type": "video",
+            "url": "https://sample-videos.com/video/mp4/720/big_buck_bunny_720p_1mb.mp4",
+            "timestamp": 1734758552000
+        }
+    }
+]

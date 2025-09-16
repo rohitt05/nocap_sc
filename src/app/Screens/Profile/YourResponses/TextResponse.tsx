@@ -1,17 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 
 const TextResponse = ({ response }) => {
     return (
-        <View style={styles.responsePreviewContainer}>
-            <Feather name="message-circle" size={24} color="white" style={styles.previewIcon} />
+        <View style={styles.responseContainer}>
             <ScrollView
-                style={styles.textScrollContainer}
+                style={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContentContainer}
+                contentContainerStyle={styles.contentContainer}
             >
-                <Text style={styles.responsePreviewText}>
+                <Text style={styles.text}>
                     {response}
                 </Text>
             </ScrollView>
@@ -20,27 +18,27 @@ const TextResponse = ({ response }) => {
 };
 
 const styles = StyleSheet.create({
-    responsePreviewContainer: {
-        height: 180, // Increased height from 150 to 180
-        backgroundColor: '#000',
-        padding: 12,
+    responseContainer: {
+        height: 180,
+        width: 150,
+        backgroundColor: '#000', // Black background
         borderBottomWidth: 0.6,
         borderBottomColor: '#333',
     },
-    previewIcon: {
-        opacity: 0.9,
-        marginBottom: 6,
-    },
-    textScrollContainer: {
+    scrollContainer: {
         flex: 1,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
     },
-    scrollContentContainer: {
-        paddingBottom: 6,
+    contentContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
     },
-    responsePreviewText: {
+    text: {
         color: '#CCC',
-        fontSize: 15,
-        lineHeight: 20,
+        fontSize: 14,
+        lineHeight: 18,
+        textAlign: 'left',
     },
 });
 

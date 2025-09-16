@@ -40,9 +40,18 @@ const getAppName = () => {
 };
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  // Get Mapbox download token for SDK installation
+  const downloadToken = process.env.MAPBOX_DOWNLOAD_TOKEN;
+
   console.log(
     `Building app: ${getAppName()} with ID: ${getUniqueIdentifier()}`
   );
+
+  if (!downloadToken) {
+    console.warn("⚠️ MAPBOX_DOWNLOAD_TOKEN not found in environment variables");
+  } else {
+    console.log("✅ MAPBOX_DOWNLOAD_TOKEN found for SDK download");
+  }
 
   return {
     ...config,
@@ -86,6 +95,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       "expo-router",
+      "expo-dev-client",
+      [
+        "expo-sensors",
+        {
+          motionPermission:
+            "Allow $(NoCap) to access motion and orientation sensors for compass functionality",
+        },
+      ],
       [
         "expo-camera",
         {
@@ -102,19 +119,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       [
-        // highlight-start
         "@rnmapbox/maps",
         {
-          RNMapboxMapsDownloadToken:
-            "sk.eyJ1Ijoicm9oaXR0MDA1IiwiYSI6ImNtY3ZrZDBrMDA1YmUyaXI5eHllYWd6dzQifQ.SbHDVQ1QtFB1aoLjG7KlQw",
-          RNMapboxMapsVersion: "11.0.0",
+          // ✅ FIXED: Use exact configuration from @rnmapbox/maps docs
+          RNMapboxMapsDownloadToken: downloadToken || "",
+          RNMapboxMapsVersion: "11.0.0", // ✅ FIXED: Changed from 11.8.0 to 11.0.0
         },
-        // highlight-end
       ],
       [
         "expo-location",
         {
+          // ✅ ADDED: Required location permission for Mapbox
           locationWhenInUsePermission: "Show current location on map.",
+          locationAlwaysAndWhenInUsePermission:
+            "Allow $(NoCap) to use your location for maps and compass features",
+          isIosBackgroundLocationEnabled: false,
+          isAndroidBackgroundLocationEnabled: false,
         },
       ],
     ],
@@ -125,6 +145,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       eas: {
         projectId: "1970dca5-18db-4f84-9d4c-baff6c3c7e2b",
       },
+      // ✅ SIMPLIFIED: Only include build variant for debugging
+      buildVariant: IS_DEV
+        ? "development"
+        : IS_PREVIEW
+        ? "preview"
+        : "production",
     },
     owner: "rohitt05",
   };

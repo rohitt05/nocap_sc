@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,15 +9,18 @@ import {
     ActivityIndicator,
     Alert,
     BackHandler,
-    Platform
+    Platform,
+    Animated
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import hooks and components
 import YourResponses from '../Profile/YourResponses';
-import { styles } from '../Profile/styles';
+import ProfileActivityMap from '../Profile/ProfileActivityMap';
+import { styles } from './styles';
 import { useFetchFriends } from '../../../../API/fetchFriends';
 import { useFriendRequests } from '../../../../API/useFriendRequests';
 import { useUserProfile } from './hook/useUserProfile';
@@ -25,7 +28,8 @@ import { useFriendshipStatus } from './hook/useFriendshipStatus';
 import CurseButton from '../../../components/CurseButton';
 import UserActionsModal from './UserActionsModal';
 import { UserInfo, useUserInfo } from './hook/useUserInfo';
-import NavigationHandler from './NavigationHandler'; // Import the NavigationHandler
+import NavigationHandler from './NavigationHandler';
+import { supabase } from '../../../../lib/supabase';
 
 // Import blockedUsers functions
 import { getBlockedUsers, unblockUser } from '../../../../API/blockedUsers';
@@ -37,6 +41,12 @@ export default function UserProfile() {
         loading: userLoading,
         isOwner
     } = useUserProfile(id as string);
+
+    // Add animated scroll tracking for navbar
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Get safe area insets for navbar positioning
+    const insets = useSafeAreaInsets();
 
     // Add this - Get user info including the join date
     const { userInfo, joinDate, loading: userInfoLoading } = useUserInfo(id as string);
@@ -63,6 +73,57 @@ export default function UserProfile() {
     const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
     const [isUserBlocked, setIsUserBlocked] = useState(false);
     const [loadingBlockStatus, setLoadingBlockStatus] = useState(true);
+
+    // NEW: Add state to track pinned responses count
+    const [pinCount, setPinCount] = useState<number | null>(null);
+    const [loadingPinCount, setLoadingPinCount] = useState(true);
+
+    // Create animated background color for navbar
+    const animatedBackgroundColor = scrollY.interpolate({
+        inputRange: [0, 400, 500],
+        outputRange: ['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.95)'],
+        extrapolate: 'clamp',
+    });
+
+    // Animate navbar title opacity
+    const navbarTitleOpacity = scrollY.interpolate({
+        inputRange: [0, 450, 500],
+        outputRange: [0.8, 0.9, 1],
+        extrapolate: 'clamp',
+    });
+
+    // NEW: Fetch pinned responses count
+    useEffect(() => {
+        async function getPinCount() {
+            if (!userData?.id) {
+                setPinCount(0);
+                setLoadingPinCount(false);
+                return;
+            }
+
+            try {
+                setLoadingPinCount(true);
+                const { count, error } = await supabase
+                    .from('pinned_responses')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userData.id);
+
+                if (error) {
+                    console.error('Error fetching pin count:', error);
+                    setPinCount(0);
+                } else {
+                    setPinCount(count || 0);
+                }
+            } catch (err) {
+                console.error('Error in pin count fetch:', err);
+                setPinCount(0);
+            } finally {
+                setLoadingPinCount(false);
+            }
+        }
+
+        getPinCount();
+    }, [userData?.id]);
 
     // Fetch blocked users and check if current profile user is blocked
     useEffect(() => {
@@ -113,27 +174,20 @@ export default function UserProfile() {
 
     // Fixed go back handler that properly returns to the friends tab
     const handleGoBack = useCallback(() => {
-        // Navigate directly to the friends tab instead of using router.back()
         router.replace("/(tabs)/friends");
     }, []);
 
     // Handle hardware back button and gestures
     useFocusEffect(
         useCallback(() => {
-            // For Android hardware back button
             const onBackPress = () => {
                 router.replace("/(tabs)/friends");
-                return true; // Prevents default behavior
+                return true;
             };
 
-            // Add back button listener for Android
             if (Platform.OS === 'android') {
                 BackHandler.addEventListener('hardwareBackPress', onBackPress);
             }
-
-            // For iOS, we need to handle the swipe gesture differently
-            // This is handled by customizing the screenOptions in the navigator
-            // but we're capturing hardware back button here
 
             return () => {
                 if (Platform.OS === 'android') {
@@ -145,54 +199,25 @@ export default function UserProfile() {
 
     // Memoize friend button props to avoid unnecessary re-renders
     const friendButtonProps = useMemo(() => {
-        // If user is blocked, show unblock button with transparent background and white border
         if (isUserBlocked) {
             return {
-                buttonStyle: {
-                    backgroundColor: 'transparent',
-                    padding: 15,
-                    borderRadius: 20,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginVertical: 20,
-                    marginHorizontal: 16,
-                    width: '90%',
-                    alignSelf: 'center',
-                    flexDirection: 'row',
-                    borderWidth: 0.5,
-                    borderColor: 'white',
-                },
-                textStyle: {
-                    color: 'white',
-                    fontWeight: 'bold',
-                    fontSize: 16
-                },
+                buttonStyle: styles.unblockButton,
+                textStyle: styles.unblockButtonText,
                 buttonText: 'Unblock this user',
                 onPressAction: handleUnblockUser,
                 isDisabled: false,
-                icon: 'person-remove-outline'
+                icon: 'person-remove-outline',
+                iconColor: 'white'
             };
         }
 
-        // Regular friend button logic
-        const buttonStyle = {
-            backgroundColor: receivedRequest ? '#fff' : (requestPending ? '#cccccc' : '#fff'),
-            padding: 15,
-            borderRadius: 20,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginVertical: 20,
-            marginHorizontal: 16,
-            width: '90%',
-            alignSelf: 'center',
-            flexDirection: 'row',
-        };
+        const buttonStyle = receivedRequest
+            ? styles.friendButtonAccept
+            : (requestPending ? styles.friendButtonPending : styles.friendButtonContainer);
 
-        const textStyle = {
-            color: receivedRequest ? 'black' : (requestPending ? '#666666' : 'black'),
-            fontWeight: 'bold',
-            fontSize: 16
-        };
+        const textStyle = receivedRequest
+            ? styles.friendButtonTextAccept
+            : (requestPending ? styles.friendButtonTextPending : styles.friendButtonText);
 
         const buttonText = receivedRequest
             ? 'Accept Request'
@@ -208,13 +233,15 @@ export default function UserProfile() {
             ? 'checkmark-circle-outline'
             : (requestPending ? undefined : 'person-add-outline');
 
-        return { buttonStyle, textStyle, buttonText, onPressAction, isDisabled, icon };
+        const iconColor = 'black';
+
+        return { buttonStyle, textStyle, buttonText, onPressAction, isDisabled, icon, iconColor };
     }, [receivedRequest, requestPending, acceptFriendRequest, sendFriendRequest, isUserBlocked, handleUnblockUser]);
 
     // Show loading indicator while data is being fetched
-    if (userLoading || friendsLoading || userInfoLoading || loadingBlockStatus) {
+    if (userLoading || friendsLoading || userInfoLoading || loadingBlockStatus || loadingPinCount) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={[styles.container, styles.centerContent]}>
                 <ActivityIndicator size="large" color="#ffffff" />
             </View>
         );
@@ -223,76 +250,108 @@ export default function UserProfile() {
     // Handle case where user data couldn't be loaded
     if (!userData) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: 'white' }}>User not found</Text>
-                <TouchableOpacity onPress={handleGoBack} style={{ marginTop: 20 }}>
-                    <Text style={{ color: '#3498db' }}>Go Back</Text>
+            <View style={[styles.container, styles.centerContent]}>
+                <Text style={styles.errorText}>User not found</Text>
+                <TouchableOpacity onPress={handleGoBack} style={styles.goBackButton}>
+                    <Text style={styles.goBackButtonText}>Go Back</Text>
                 </TouchableOpacity>
             </View>
         );
     }
 
+    // Determine if YourResponses should render
+    const shouldShowYourResponses = (isOwner || (isFriend && !isUserBlocked)) && 
+                                   userData?.id && 
+                                   pinCount !== null && 
+                                   pinCount > 0;
+
+    // Debug the ProfileActivityMap rendering conditions
+    const shouldShowActivityMap = !isOwner && isFriend && !isUserBlocked;
+
     return (
         <View style={styles.container}>
-            {/* Add NavigationHandler to handle iOS swipe gestures */}
             <NavigationHandler sourceTab="friends" />
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
 
-            {/* Navbar */}
-            <View style={styles.navbar}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleGoBack}
-                    accessibilityLabel="Go back"
-                    accessibilityRole="button"
-                >
-                    <Ionicons name="arrow-back" size={24} color="white" />
-                </TouchableOpacity>
+            {/* Animated Navbar with fade effect */}
+            <Animated.View style={[
+                styles.navbarPrecise,
+                {
+                    backgroundColor: animatedBackgroundColor,
+                    paddingTop: insets.top,
+                    height: 60 + insets.top,
+                }
+            ]}>
+                <View style={styles.navbarContent}>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={handleGoBack}
+                        accessibilityLabel="Go back"
+                        accessibilityRole="button"
+                    >
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
 
-                <Text style={styles.navbarTitle} numberOfLines={1} ellipsizeMode="tail">
-                    {userData.username}
-                </Text>
+                    <Animated.Text
+                        style={[styles.navbarTitle, { opacity: navbarTitleOpacity }]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {userData.username}
+                    </Animated.Text>
 
-                {isOwner ? (
-                    <Link href="/settings" style={{ zIndex: 10 }} asChild>
+                    {isOwner ? (
+                        <Link href="/settings" style={styles.zIndexHigh} asChild>
+                            <TouchableOpacity
+                                style={styles.menuButton}
+                                accessibilityLabel="Settings menu"
+                                accessibilityRole="button"
+                            >
+                                <View style={styles.menuButtonContainer}>
+                                    <Ionicons name="ellipsis-vertical" size={24} color="white" />
+                                </View>
+                            </TouchableOpacity>
+                        </Link>
+                    ) : (
                         <TouchableOpacity
                             style={styles.menuButton}
-                            accessibilityLabel="Settings menu"
+                            onPress={() => setIsActionsModalVisible(true)}
+                            accessibilityLabel="User actions menu"
                             accessibilityRole="button"
                         >
                             <View style={styles.menuButtonContainer}>
                                 <Ionicons name="ellipsis-vertical" size={24} color="white" />
                             </View>
                         </TouchableOpacity>
-                    </Link>
-                ) : (
-                    <TouchableOpacity
-                        style={styles.menuButton}
-                        onPress={() => setIsActionsModalVisible(true)}
-                        accessibilityLabel="User actions menu"
-                        accessibilityRole="button"
-                    >
-                        <View style={styles.menuButtonContainer}>
-                            <Ionicons name="ellipsis-vertical" size={24} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                )}
-            </View>
+                    )}
+                </View>
+            </Animated.View>
 
-            <ScrollView
-                style={styles.scrollContainer}
+            {/* Animated ScrollView with scroll tracking */}
+            <Animated.ScrollView
+                style={styles.scrollContainerFixed}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 30 }}
+                contentContainerStyle={styles.userScrollContent}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
             >
-                {/* Profile Image Container */}
-                <View style={styles.profileImageContainer}>
+                {/* Profile Image Container with HD quality */}
+                <View style={styles.profileImageContainerFixed}>
                     <Image
-                        source={{ uri: userData.avatar_url || 'https://via.placeholder.com/150' }}
-                        style={styles.profileImage}
+                        source={{
+                            uri: userData.avatar_url || 'https://via.placeholder.com/1080x1080',
+                            cache: 'force-cache',
+                        }}
+                        style={styles.profileImageHD}
                         resizeMode="cover"
+                        resizeMethod="scale"
                         accessible={true}
                         accessibilityLabel={`${userData.username}'s profile picture`}
                         defaultSource={require('../../../../assets/hattori.webp')}
+                        fadeDuration={300}
                     />
 
                     <LinearGradient
@@ -333,7 +392,7 @@ export default function UserProfile() {
                     </LinearGradient>
                 </View>
 
-                {/* Conditionally render Message Button ONLY if NOT owner AND IS a friend AND NOT blocked */}
+                {/* Conditionally render Message Button */}
                 {!isOwner && isFriend && !isUserBlocked && (
                     <CurseButton
                         receiverId={userData.id}
@@ -360,22 +419,33 @@ export default function UserProfile() {
                             <Ionicons
                                 name={friendButtonProps.icon}
                                 size={20}
-                                color={isUserBlocked ? "white" : "black"}
-                                style={{ marginLeft: 10 }}
+                                color={friendButtonProps.iconColor}
+                                style={styles.friendButtonIcon}
                             />
                         )}
                     </TouchableOpacity>
                 )}
 
-                {/* User's Responses Component - only visible to profile owner or friends and not blocked */}
-                {(isOwner || (isFriend && !isUserBlocked)) && (
-                    <View style={{ marginTop: -10 }}>
+                {/* FIXED: User's Responses Component - Only render if user has pinned responses */}
+                {shouldShowYourResponses && (
+                    <View style={styles.responsesContainer}>
                         <YourResponses userId={userData.id} />
                     </View>
                 )}
-            </ScrollView>
 
-            {/* User Actions Modal - only render for non-owner users */}
+                {/* User's Activity Map - Only shows for friends who aren't blocked and isn't owner */}
+                {shouldShowActivityMap && userData?.id && (
+                    <View style={{ marginTop: 20 }}>
+                        <ProfileActivityMap
+                            userId={userData.id}
+                            isOwnProfile={false}
+                            isVisible={true}
+                        />
+                    </View>
+                )}
+            </Animated.ScrollView>
+
+            {/* User Actions Modal */}
             {!isOwner && userData && (
                 <UserActionsModal
                     isVisible={isActionsModalVisible}

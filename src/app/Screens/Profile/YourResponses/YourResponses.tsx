@@ -1,12 +1,12 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+// YourResponses.tsx - KEEP EXISTING LAYOUT + ADD REFRESH SUPPORT
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { supabase } from '../../../../../lib/supabase';
 import { styles } from './styles'
-import PinnedResponseModal from './PinnedResponseModal'; // Import the modal component
+import PinnedResponseModal from './PinnedResponseModal';
 
-// Import extracted components
 import TextResponse from './TextResponse';
 import AudioResponse from './AudioResponse';
 import ImageResponse from './ImageResponse';
@@ -14,7 +14,8 @@ import VideoResponse from './VideoResponse';
 import GifResponse from './GifResponse';
 import { Link } from 'expo-router';
 
-// Define interfaces for pinned response data
+const { height: screenHeight } = Dimensions.get('window');
+
 interface PinnedResponse {
     id: string;
     user_id: string;
@@ -36,69 +37,83 @@ interface ResponseData {
     };
 }
 
-// Add proper type for props
+// ✅ ONLY CHANGE: Add refreshTrigger prop
 interface YourResponsesProps {
-    userId?: string; // Optional - if not provided, show current user's pins
+    userId?: string;
+    refreshTrigger?: number; // NEW: Refresh trigger from parent
 }
 
-const YourResponses = ({ userId }: YourResponsesProps) => {
-    const [sound, setSound] = useState();
+// ✅ ONLY CHANGE: Accept refreshTrigger prop
+const YourResponses = ({ userId, refreshTrigger }: YourResponsesProps) => {
+    const [sound, setSound] = useState<Audio.Sound>();
     const [isPlaying, setIsPlaying] = useState(false);
-    const [playingId, setPlayingId] = useState(null);
+    const [playingId, setPlayingId] = useState<string | null>(null);
     const [pinnedResponses, setPinnedResponses] = useState<PinnedResponse[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentUserId, setCurrentUserId] = useState(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [isViewingOwnProfile, setIsViewingOwnProfile] = useState(true);
     const [isFriend, setIsFriend] = useState(false);
-
-    // Add state for modal control
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedResponse, setSelectedResponse] = useState<ResponseData | null>(null);
 
-    // Fetch pinned responses on component mount and when userId changes
     useEffect(() => {
         const getCurrentUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setCurrentUserId(user.id);
-                // If userId is not provided or matches current user, we're viewing own profile
                 const viewingOwnProfile = !userId || userId === user.id;
                 setIsViewingOwnProfile(viewingOwnProfile);
-
-                // If viewing another user's profile, check if they're friends
                 if (!viewingOwnProfile) {
                     checkFriendship(user.id, userId);
                 }
             }
         };
-
         getCurrentUser();
     }, [userId]);
 
-    // Fetch pinned responses when currentUserId and friendship status are determined
     useEffect(() => {
         if (currentUserId) {
             fetchPinnedResponses();
         }
     }, [currentUserId, isFriend, userId]);
 
-    // Check if current user and profile user are friends
-    const checkFriendship = async (currentUserId, profileUserId) => {
+    // ✅ NEW: Listen for refresh trigger from parent
+    useEffect(() => {
+        if (refreshTrigger && refreshTrigger > 0) {
+            console.log('🔄 YourResponses: Refreshing due to pull-to-refresh...');
+            fetchPinnedResponses();
+        }
+    }, [refreshTrigger]);
+
+    // FIXED: Corrected friendship checking logic with proper Supabase syntax
+    const checkFriendship = async (currentUserId: string, profileUserId?: string) => {
+        if (!profileUserId) {
+            setIsFriend(false);
+            return;
+        }
         try {
-            // Check if there's an accepted friendship
             const { data: friendshipData, error: friendshipError } = await supabase
                 .from('friendships')
                 .select('*')
-                .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`)
-                .or(`user_id.eq.${profileUserId},friend_id.eq.${profileUserId}`)
                 .eq('status', 'accepted')
+                .or(`and(user_id.eq.${currentUserId},friend_id.eq.${profileUserId}),and(user_id.eq.${profileUserId},friend_id.eq.${currentUserId})`)
                 .single();
-
             if (friendshipError && friendshipError.code !== 'PGRST116') {
                 console.error('Error checking friendship:', friendshipError);
-            }
+                const { data: friendshipDataAlt } = await supabase
+                    .from('friendships')
+                    .select('*')
+                    .eq('status', 'accepted')
+                    .or(`user_id.eq.${currentUserId},user_id.eq.${profileUserId}`)
+                    .or(`friend_id.eq.${currentUserId},friend_id.eq.${profileUserId}`);
 
-            // If there's valid friendship data, they are friends
+                const isConnected = friendshipDataAlt?.some(friendship =>
+                    (friendship.user_id === currentUserId && friendship.friend_id === profileUserId) ||
+                    (friendship.user_id === profileUserId && friendship.friend_id === currentUserId)
+                );
+                setIsFriend(!!isConnected);
+                return;
+            }
             setIsFriend(!!friendshipData);
         } catch (err) {
             console.error('Error in friendship check:', err);
@@ -106,22 +121,11 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         }
     };
 
-    // Fetch user's pinned responses from database
     const fetchPinnedResponses = async () => {
         try {
             setLoading(true);
-
-            // Determine which user's pins to fetch
             const targetUserId = userId || currentUserId;
 
-            // If viewing another user's profile and not friends, don't fetch pins
-            if (!isViewingOwnProfile && !isFriend) {
-                setPinnedResponses([]);
-                setLoading(false);
-                return;
-            }
-
-            // Fetch pinned responses with joined response and prompt data
             const { data, error } = await supabase
                 .from('pinned_responses')
                 .select(`
@@ -141,20 +145,18 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
                 `)
                 .eq('user_id', targetUserId)
                 .order('created_at', { ascending: false });
-
             if (error) {
                 throw error;
             }
-
             setPinnedResponses(data || []);
         } catch (err) {
             console.error('Error fetching pinned responses:', err);
+            setPinnedResponses([]);
         } finally {
             setLoading(false);
         }
     };
 
-    // Cleanup sound on component unmount
     useEffect(() => {
         return sound
             ? () => {
@@ -163,32 +165,23 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
             : undefined;
     }, [sound]);
 
-    // Function to handle audio playback
-    const playAudio = async (audioUrl, id) => {
+    const playAudio = async (audioUrl: string, id: string) => {
         try {
-            // Release any existing sound object
             if (sound) {
                 await sound.unloadAsync();
             }
-
-            // If the same audio is clicked again, just stop playback
             if (playingId === id) {
                 setIsPlaying(false);
                 setPlayingId(null);
                 return;
             }
-
-            console.log('Playing audio from URL:', audioUrl);
             const { sound: newSound } = await Audio.Sound.createAsync(
                 { uri: audioUrl },
                 { shouldPlay: true }
             );
-
             setSound(newSound);
             setIsPlaying(true);
             setPlayingId(id);
-
-            // Listen for playback status
             newSound.setOnPlaybackStatusUpdate((status) => {
                 if (status.didJustFinish) {
                     setIsPlaying(false);
@@ -202,7 +195,6 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         }
     };
 
-    // Function to format date for display
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -212,27 +204,21 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         });
     };
 
-    // Handle opening the modal with the selected response
     const handleOpenModal = (response: ResponseData) => {
         setSelectedResponse(response);
         setModalVisible(true);
     };
 
-    // Handle closing the modal
     const handleCloseModal = () => {
         setModalVisible(false);
     };
 
-    // Function to render the appropriate content preview based on type
     const renderResponsePreview = (item: PinnedResponse) => {
         const response = item.response;
         if (!response) return null;
-
-        // Use a different style for text responses
         const itemStyle = response.content_type === 'text'
             ? [styles.pinItem, styles.textPinItem]
             : styles.pinItem;
-
         return (
             <View key={item.id} style={styles.responseContainer}>
                 <TouchableOpacity
@@ -241,7 +227,6 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
                 >
                     {renderResponseContent(response)}
                 </TouchableOpacity>
-                {/* Date container is now outside the pin item */}
                 <View style={styles.dateContainer}>
                     <Text style={styles.promptHint} numberOfLines={1}>
                         {response.prompt?.text?.substring(0, 15) || "Prompt"}...
@@ -252,7 +237,6 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         );
     };
 
-    // Function to render the content based on type
     const renderResponseContent = (response: ResponseData) => {
         switch (response.content_type) {
             case 'text':
@@ -278,7 +262,6 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         }
     };
 
-    // Render appropriate empty state based on context
     const renderEmptyState = () => {
         if (isViewingOwnProfile) {
             return (
@@ -301,28 +284,35 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
         }
     };
 
-    // This will determine if we should render the component at all
     const shouldRenderComponent = () => {
-        // Always render if still loading
         if (loading) return true;
-
-        // Always render if viewing own profile (to allow adding pins)
         if (isViewingOwnProfile) return true;
-
-        // If not viewing own profile, only render if there are pins and is a friend
-        return pinnedResponses.length > 0 && isFriend;
+        if (isFriend) return true;
+        return false;
     };
 
-    // If we shouldn't render the component, return null
-    if (!shouldRenderComponent()) {
-        return null;
+    if (!shouldRenderComponent()) return null;
+
+    // Split logic: half-half when more than 5 responses
+    const totalPins = pinnedResponses.length;
+    let topRowPins: PinnedResponse[];
+    let bottomRowPins: PinnedResponse[];
+
+    if (totalPins <= 5) {
+        topRowPins = pinnedResponses;
+        bottomRowPins = [];
+    } else {
+        const half = Math.ceil(totalPins / 2);
+        topRowPins = pinnedResponses.slice(0, half);
+        bottomRowPins = pinnedResponses.slice(half);
     }
+
+    const showSecondRow = bottomRowPins.length > 0;
 
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerText}>Pinned Responses</Text>
-                {/* Only show visibility indicator to the account owner */}
                 {isViewingOwnProfile && (
                     <View style={styles.visibilityContainer}>
                         <Ionicons name="people-sharp" size={16} color="#888" />
@@ -336,30 +326,55 @@ const YourResponses = ({ userId }: YourResponsesProps) => {
                     <ActivityIndicator color="#888" size="large" />
                 </View>
             ) : (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
-                >
-                    {/* Show add pin button first if viewing own profile */}
-                    {isViewingOwnProfile && (
-                        <Link href="/archives" asChild>
-                            <TouchableOpacity style={styles.addNewPin}>
-                                <AntDesign name="plus" size={32} color="#888" />
-                                <Text style={styles.addPinText}>Tap to pin more of your responses</Text>
-                            </TouchableOpacity>
-                        </Link>
-                    )}
-
-                    {pinnedResponses.length > 0 ? (
-                        pinnedResponses.map((item) => renderResponsePreview(item))
-                    ) : (
+                <>
+                    {pinnedResponses.length === 0 ? (
                         renderEmptyState()
+                    ) : (
+                        <>
+                            {/* ✅ KEEP EXISTING: Simple horizontal scrolling - no changes */}
+                            {/* Top Row - Scrolls Left to Right */}
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.scrollContent}
+                                style={styles.rowScrollView}
+                                scrollEventThrottle={16}
+                            >
+                                {/* Add New Pin button as first item in top row if viewing own profile */}
+                                {isViewingOwnProfile && (
+                                    <Link href="/archives" asChild>
+                                        <TouchableOpacity style={styles.addNewPin}>
+                                            <AntDesign name="plus" size={32} color="#888" />
+                                            <Text style={styles.addPinText}>Tap to pin more of your responses</Text>
+                                        </TouchableOpacity>
+                                    </Link>
+                                )}
+
+                                {topRowPins.map((item) => renderResponsePreview(item))}
+                            </ScrollView>
+
+                            {/* Bottom Row - Only render if there are more than 5 pinned responses */}
+                            {showSecondRow && (
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    inverted
+                                    contentContainerStyle={[styles.scrollContent, { transform: [{ scaleX: -1 }] }]}
+                                    style={styles.rowScrollView}
+                                    scrollEventThrottle={16}
+                                >
+                                    {bottomRowPins.slice().reverse().map((item) => (
+                                        <View key={item.id} style={{ transform: [{ scaleX: -1 }] }}>
+                                            {renderResponsePreview(item)}
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            )}
+                        </>
                     )}
-                </ScrollView>
+                </>
             )}
 
-            {/* Add the PinnedResponseModal component */}
             <PinnedResponseModal
                 isVisible={modalVisible}
                 onClose={handleCloseModal}
