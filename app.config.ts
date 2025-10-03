@@ -74,6 +74,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       versionCode: 25, // INCREMENT this for every Play upload!
       targetSdkVersion: 36, // API 36 (Android 16) per Expo SDK 54
+      // Fix AndroidX manifest conflict
+      intentFilters: [
+        {
+          action: "MAIN",
+          category: ["LAUNCHER"]
+        }
+      ]
     } as any,
     web: {
       favicon: "./assets/favicon.png",
@@ -89,6 +96,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             targetSdkVersion: 36,
             buildToolsVersion: "35.0.0",
             kotlinVersion: "2.0.21",
+            useAndroidX: true,
+            enableProguardInReleaseBuilds: false,
           },
           ios: {
             deploymentTarget: "15.1",
