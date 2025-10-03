@@ -95,6 +95,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           },
         },
       ],
+      "expo-font",
+      "expo-video",
+      "expo-web-browser",
       [
         "expo-sensors",
         {
