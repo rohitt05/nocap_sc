@@ -95,9 +95,9 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                         style={styles.keyboardAvoidingContainer}
                     >
                         <View {...panResponder.panHandlers} style={styles.modalView}>
-                            {/** Swipe indicator at the top of modal */}*
+                        
                             <View style={styles.swipeIndicator} />
-                            {/** Modal Header */}*
+                           
                             <View style={styles.modalHeader}>
                                 <Text style={styles.modalTitle}>Edit Profile</Text>
                                 <TouchableOpacity
@@ -111,7 +111,7 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                 </TouchableOpacity>
                             </View>
                             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                                {/** Profile Image Section */}*
+                                
                                 <View style={styles.profileImageSection}>
                                     {uploading && (
                                         <View style={styles.loadingOverlay}>
@@ -134,7 +134,7 @@ const EditProfileModal = ({ visible, onClose, userData, refreshUserData }: EditP
                                     </View>
                                     <Text style={styles.changePhotoText}>Change profile photo</Text>
                                 </View>
-                                {/** Form Fields */}*
+                              
                                 <View style={styles.formSection}>
                                     <View style={styles.inputContainer}>
                                         <Text style={styles.inputLabel}>Full Name</Text>

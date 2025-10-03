@@ -1,7 +1,7 @@
 // MapControls.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { FontAwesome6, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 interface MapControlsProps {
     isFullScreen: boolean;
@@ -28,8 +28,15 @@ const MapControls: React.FC<MapControlsProps> = ({
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.iconBackground} onPress={onGPSPress} activeOpacity={0.8}>
-                <FontAwesome6 name="map-location-dot" size={24} color="white" />
+            <TouchableOpacity
+                style={styles.iconBackground}
+                onPress={() => {
+                    console.log('GPS Button Pressed');
+                    onGPSPress && onGPSPress();
+                }}
+                activeOpacity={0.8}
+            >
+                <FontAwesome5 name="map-marker-alt" size={24} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -78,7 +85,7 @@ const styles = StyleSheet.create({
         right: 20,
         transform: [{ translateY: -80 }],
         flexDirection: 'column',
-        gap: 10,
+        // gap: 10, // Use marginBottom for older React Native versions:
     },
     iconBackground: {
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -87,6 +94,7 @@ const styles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: 10, // Ensures vertical spacing
     },
     iconBackgroundActive: {
         backgroundColor: 'rgba(74, 144, 226, 0.25)',

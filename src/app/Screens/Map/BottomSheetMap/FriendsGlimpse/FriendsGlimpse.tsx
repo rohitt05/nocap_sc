@@ -15,6 +15,7 @@ interface Story {
     uploadedTime: string;
     timestamp: number;
     duration: number;
+     caption: string;
 }
 
 interface Friend {
@@ -40,14 +41,14 @@ const FriendsGlimpse: React.FC = () => {
     const [isMounted, setIsMounted] = useState(true);
     const [scrollOffset, setScrollOffset] = useState(0);
     // ✅ NEW: Preloading states
-    const [preloadedMedia, setPreloadedMedia] = useState<{[key: string]: string}>({});
-    const [preloadProgress, setPreloadProgress] = useState<{[key: string]: number}>({});
+    const [preloadedMedia, setPreloadedMedia] = useState<{ [key: string]: string }>({});
+    const [preloadProgress, setPreloadProgress] = useState<{ [key: string]: number }>({});
 
     const scrollViewRef = useRef<ScrollView>(null);
     const flatListRef = useRef<FlatList>(null);
     const progress = useRef(new Animated.Value(0)).current;
     const progressAnimation = useRef<Animated.CompositeAnimation | null>(null);
-    
+
     const PROFILE_ITEM_WIDTH = 50;
     const FIXED_HIGHLIGHT_INDEX = 0;
 
@@ -83,7 +84,7 @@ const FriendsGlimpse: React.FC = () => {
     const preloadMedia = async (story: Story): Promise<string> => {
         try {
             const cacheKey = story.id;
-            
+
             // Check if already preloaded
             if (preloadedMedia[cacheKey]) {
                 console.log('📦 Using cached media for:', story.id);
@@ -91,14 +92,14 @@ const FriendsGlimpse: React.FC = () => {
             }
 
             console.log('⬇️ Preloading media:', story.url);
-            
+
             // Get full URL first
             const fullUrl = await getMediaUrl(story.url);
-            
+
             // Create local cache path
             const filename = `story_${story.id}_${Date.now()}.${story.type === 'video' ? 'mp4' : 'jpg'}`;
             const localPath = `${FileSystem.cacheDirectory}${filename}`;
-            
+
             // Check if already cached locally
             const fileInfo = await FileSystem.getInfoAsync(localPath);
             if (fileInfo.exists) {
@@ -110,7 +111,7 @@ const FriendsGlimpse: React.FC = () => {
             // Download to cache
             console.log('⬇️ Downloading to cache:', localPath);
             const downloadResult = await FileSystem.downloadAsync(fullUrl, localPath);
-            
+
             if (downloadResult.status === 200) {
                 console.log('✅ Successfully cached:', localPath);
                 setPreloadedMedia(prev => ({ ...prev, [cacheKey]: localPath }));
@@ -134,10 +135,10 @@ const FriendsGlimpse: React.FC = () => {
     // ✅ NEW: Preload all stories in background
     const preloadAllStories = async (friends: Friend[]) => {
         console.log('🚀 Starting story preloading...');
-        
+
         // Get all stories from all friends
         const allStories = friends.flatMap(friend => friend.stories);
-        
+
         // Preload in parallel with limited concurrency
         const preloadPromises = allStories.slice(0, 10).map(async (story) => {
             try {
@@ -184,14 +185,14 @@ const FriendsGlimpse: React.FC = () => {
             }
 
             const friendsMap = new Map<string, Friend>();
-            
+
             // ✅ UPDATED: Process stories and get full URLs
             const processedStories = await Promise.all(
                 storiesData.map(async (dbStory: any) => {
                     try {
                         // Get full URL for the media
                         const fullUrl = await getMediaUrl(dbStory.media_url);
-                        
+
                         return {
                             ...dbStory,
                             full_url: fullUrl
@@ -208,15 +209,17 @@ const FriendsGlimpse: React.FC = () => {
 
             processedStories.forEach((dbStory: any) => {
                 const userId = dbStory.user_id;
-                
+
                 const story: Story = {
                     id: dbStory.id,
                     type: dbStory.media_type === 'photo' ? 'image' : 'video',
-                    url: dbStory.full_url, // ✅ Use full URL
+                    url: dbStory.full_url,
                     uploadedTime: dbStory.created_at,
                     timestamp: new Date(dbStory.created_at).getTime(),
                     duration: dbStory.duration_ms || (dbStory.media_type === 'video' ? 15000 : 5000),
+                    caption: dbStory.caption ?? '',  // <---- THIS LINE ADDED!
                 };
+
 
                 if (friendsMap.has(userId)) {
                     friendsMap.get(userId)!.stories.push(story);
@@ -257,7 +260,7 @@ const FriendsGlimpse: React.FC = () => {
     // ✅ NEW: Get optimized media URL (cached if available)
     const getOptimizedMediaUrl = async (story: Story): Promise<string> => {
         const cacheKey = story.id;
-        
+
         // Return cached version if available
         if (preloadedMedia[cacheKey]) {
             console.log('🚀 Using preloaded media for:', story.id);
@@ -276,11 +279,11 @@ const FriendsGlimpse: React.FC = () => {
     useEffect(() => {
         return () => {
             setIsMounted(false);
-            
+
             if (progressAnimation.current) {
                 progressAnimation.current.stop();
             }
-            
+
             progress.stopAnimation();
             progress.setValue(0);
         };
@@ -294,7 +297,7 @@ const FriendsGlimpse: React.FC = () => {
         }
 
         progress.setValue(0);
-        
+
         const animation = Animated.timing(progress, {
             toValue: 1,
             duration: currentStory.duration,
@@ -332,9 +335,9 @@ const FriendsGlimpse: React.FC = () => {
 
     const handleStoryComplete = () => {
         if (!isMounted) return;
-        
+
         const hasMoreStories = currentStoryIndex < currentFriend.stories.length - 1;
-        
+
         if (hasMoreStories) {
             setCurrentStoryIndex(prev => prev + 1);
             setVideoProgress(0);
@@ -344,12 +347,12 @@ const FriendsGlimpse: React.FC = () => {
                 setCurrentUserIndex(prev => prev + 1);
                 setCurrentStoryIndex(0);
                 setVideoProgress(0);
-                
+
                 flatListRef.current?.scrollToIndex({
                     index: currentUserIndex + 1,
                     animated: true
                 });
-                
+
                 updateProfileScroll(currentUserIndex + 1);
             }
         }
@@ -357,14 +360,14 @@ const FriendsGlimpse: React.FC = () => {
 
     const handleStoryTap = (direction: 'left' | 'right') => {
         if (!isMounted) return;
-        
+
         if (progressAnimation.current) {
             progressAnimation.current.stop();
         }
-        
+
         if (direction === 'right') {
             const hasMoreStories = currentStoryIndex < currentFriend.stories.length - 1;
-            
+
             if (hasMoreStories) {
                 setCurrentStoryIndex(prev => prev + 1);
                 setVideoProgress(0);
@@ -374,7 +377,7 @@ const FriendsGlimpse: React.FC = () => {
                     setCurrentUserIndex(prev => prev + 1);
                     setCurrentStoryIndex(0);
                     setVideoProgress(0);
-                    
+
                     flatListRef.current?.scrollToIndex({
                         index: currentUserIndex + 1,
                         animated: true
@@ -390,11 +393,11 @@ const FriendsGlimpse: React.FC = () => {
                 if (currentUserIndex > 0) {
                     const prevUserIndex = currentUserIndex - 1;
                     const prevUser = sortedFriends[prevUserIndex];
-                    
+
                     setCurrentUserIndex(prevUserIndex);
                     setCurrentStoryIndex(prevUser.stories.length - 1);
                     setVideoProgress(0);
-                    
+
                     flatListRef.current?.scrollToIndex({
                         index: prevUserIndex,
                         animated: true
@@ -407,16 +410,16 @@ const FriendsGlimpse: React.FC = () => {
 
     const handleUserSwipe = (direction: 'left' | 'right') => {
         if (!isMounted) return;
-        
+
         if (progressAnimation.current) {
             progressAnimation.current.stop();
         }
-        
+
         if (direction === 'left' && currentUserIndex < sortedFriends.length - 1) {
             setCurrentUserIndex(prev => prev + 1);
             setCurrentStoryIndex(0);
             setVideoProgress(0);
-            
+
             flatListRef.current?.scrollToIndex({
                 index: currentUserIndex + 1,
                 animated: true
@@ -426,7 +429,7 @@ const FriendsGlimpse: React.FC = () => {
             setCurrentUserIndex(prev => prev - 1);
             setCurrentStoryIndex(0);
             setVideoProgress(0);
-            
+
             flatListRef.current?.scrollToIndex({
                 index: currentUserIndex - 1,
                 animated: true
@@ -440,7 +443,7 @@ const FriendsGlimpse: React.FC = () => {
             const targetProfilePosition = userIndex * PROFILE_ITEM_WIDTH;
             const highlightPosition = FIXED_HIGHLIGHT_INDEX * PROFILE_ITEM_WIDTH;
             const scrollAmount = targetProfilePosition - highlightPosition;
-            
+
             scrollViewRef.current.scrollTo({
                 x: Math.max(0, scrollAmount),
                 animated: true
@@ -450,15 +453,15 @@ const FriendsGlimpse: React.FC = () => {
 
     const handleProfilePress = (index: number) => {
         if (index === currentUserIndex || !isMounted) return;
-        
+
         if (progressAnimation.current) {
             progressAnimation.current.stop();
         }
-        
+
         setCurrentUserIndex(index);
         setCurrentStoryIndex(0);
         setVideoProgress(0);
-        
+
         flatListRef.current?.scrollToIndex({
             index: index,
             animated: true
@@ -490,13 +493,13 @@ const FriendsGlimpse: React.FC = () => {
         const profileSpacing = 50;
         const regularProfileWidth = 40;
         const floatingProfileWidth = 58;
-        
+
         const profileCenterX = baseX + (FIXED_HIGHLIGHT_INDEX * profileSpacing) + (regularProfileWidth / 2) - scrollOffset;
         const floatingX = profileCenterX - (floatingProfileWidth / 2);
-        
+
         const minX = 16;
         const maxX = screenWidth - floatingProfileWidth - 16;
-        
+
         return Math.max(minX, Math.min(maxX, floatingX));
     };
 

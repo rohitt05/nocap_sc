@@ -1,4 +1,4 @@
-// HorizontalStoryList.tsx - FINAL, WITH SUPPORT FOR final_longitude / final_latitude FIELDS
+// HorizontalStoryList.tsx - Pinterest-like optimized for smooth expansion
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ImageBackground, Modal, Alert } from 'react-native';
@@ -9,6 +9,9 @@ import { formatDate } from '../utils';
 import { ActivityLocation } from '../types';
 import { horizontalStoryStyles as styles } from './HorizontalStoryStyles';
 import { supabase } from '../../../../../../lib/supabase';
+
+const CARD_WIDTH = 210;
+const CARD_HEIGHT = 280;
 
 type ExtendedActivityLocation = ActivityLocation & {
   signedUrl?: string;
@@ -37,7 +40,7 @@ const VideoPlayer = React.memo<{
     <Video
       ref={videoRef}
       source={{ uri: item.signedUrl }}
-      style={styles.fullSizeVideo}
+      style={{ width: '100%', height: '100%' }}
       resizeMode="cover"
       paused={!isPlaying}
       repeat={true}
@@ -249,8 +252,8 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
       const hasCoords = !isNaN(longitude) && !isNaN(latitude);
 
       return (
-        <View style={[styles.expandedItemContainer, { overflow: 'visible' }]}>
-          <View style={styles.fullMediaContainer}>
+        <View style={[styles.expandedItemContainer, { width: CARD_WIDTH, height: CARD_HEIGHT, overflow: 'visible' }]}>
+          <View style={[styles.fullMediaContainer, { width: CARD_WIDTH, height: CARD_HEIGHT }]}>
             {isVideo ? (
               <VideoPlayer
                 item={item}
@@ -261,7 +264,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
             ) : (
               <ImageBackground
                 source={{ uri: item.signedUrl }}
-                style={styles.fullSizeImage}
+                style={{ width: '100%', height: '100%', borderRadius: 18 }}
                 resizeMode="cover"
                 imageStyle={styles.fullImageStyle}
               />
@@ -276,7 +279,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
                   toggleAlbumExpansion(item.originalAlbumId);
                 }
               }}>
-              <AntDesign name="closecircleo" size={20} color="white" />
+              <AntDesign name="closecircleo" size={18} color="white" />
             </TouchableOpacity>
           </View>
 
@@ -317,7 +320,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
                 }}
                 activeOpacity={0.7}
               >
-                <Entypo name="dots-three-vertical" size={18} color="white" />
+                <Entypo name="dots-three-vertical" size={16} color="white" />
               </TouchableOpacity>
             )}
           </View>
@@ -337,7 +340,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
     const collapsedHasCoords = !isNaN(longitude) && !isNaN(latitude);
 
     return (
-      <View style={[styles.albumStackContainer, { overflow: 'visible' }]}>
+      <View style={[styles.albumStackContainer, { width: CARD_WIDTH, height: CARD_HEIGHT, overflow: 'visible' }]}>
         {hasMultipleItems && Array.from({ length: stackCount - 1 }, (_, index) => {
           const stackIndex = stackCount - 2 - index;
           const mediaItem = mediaItems[stackIndex + 1];
@@ -345,10 +348,12 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
             EXACT_REFERENCE_STACK_TRANSFORMS[index % EXACT_REFERENCE_STACK_TRANSFORMS.length];
           return (
             <View
-              key={`stack-${index}`}
+              key={`stack-${item.id}-${mediaItem?.id || index}`}
               style={[
                 styles.stackBackgroundCard,
                 {
+                  width: CARD_WIDTH,
+                  height: CARD_HEIGHT,
                   transform: [
                     { translateX: transform.translateX },
                     { translateY: transform.translateY },
@@ -364,7 +369,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
             >
               <ImageBackground
                 source={{ uri: mediaItem?.mediaUrl || item.mediaUrl }}
-                style={styles.stackCardImage}
+                style={[styles.stackCardImage, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
                 imageStyle={styles.stackCardImageStyle}
                 resizeMode="cover"
               />
@@ -375,6 +380,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
         <TouchableOpacity
           style={[
             styles.storyItem,
+            { width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 18 },
             hasMultipleItems ?
               [styles.mainStackCard, { zIndex: 200, elevation: 25, overflow: 'visible' }] :
               [styles.singleItemCard, { zIndex: 150, elevation: 20, overflow: 'visible' }]
@@ -398,7 +404,7 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
           ) : (
             <ImageBackground
               source={{ uri: item.signedUrl || item.mediaUrl }}
-              style={styles.storyImageBackground}
+              style={[styles.storyImageBackground, { width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 18 }]}
               resizeMode="cover"
               imageStyle={styles.storyImageStyle}
             />
@@ -431,14 +437,14 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
 
             {hasMultipleItems && (
               <View style={styles.tapHint}>
-                <MaterialIcons name="touch-app" size={16} color="rgba(255, 255, 255, 0.8)" />
+                <MaterialIcons name="touch-app" size={14} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.tapHintText}>Tap to expand</Text>
               </View>
             )}
 
             {hasSingleItem && (
               <View style={styles.tapHint}>
-                <MaterialIcons name="visibility" size={16} color="rgba(255, 255, 255, 0.8)" />
+                <MaterialIcons name="visibility" size={14} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.tapHintText}>Tap to view</Text>
               </View>
             )}
@@ -448,10 +454,13 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
     );
   }, [currentlyPlaying, toggleAlbumExpansion, toggleSingleAlbumView, onViewOnMap, openDeleteMenu, isOwnProfile]);
 
-  const keyExtractor = useCallback((item: any) => item.id, []);
+  // Memoized to avoid unnecessary re-renders!
+  const MemoizedRenderItem = React.memo(renderItem);
+
+  const keyExtractor = useCallback((item: any) => item.id?.toString() ?? Math.random().toString(36).slice(2), []);
   const getItemLayout = useCallback((data: any, index: number) => ({
-    length: 375,
-    offset: 375 * index,
+    length: CARD_WIDTH,
+    offset: CARD_WIDTH * index,
     index,
   }), []);
 
@@ -464,7 +473,8 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
       {flattenedData.length > 0 ? (
         <FlatList
           data={flattenedData}
-          renderItem={renderItem}
+          renderItem={(props) => <MemoizedRenderItem {...props} />}
+
           keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           horizontal={true}
@@ -473,34 +483,34 @@ const HorizontalStoryList: React.FC<HorizontalStoryListProps> = ({
             styles.horizontalScrollContent,
             {
               overflow: 'visible',
-              paddingTop: 40,
-              paddingBottom: 40,
-              minHeight: 540,
+              paddingTop: 30,
+              paddingBottom: 30,
+              minHeight: CARD_HEIGHT + 80,
             }
           ]}
           style={[
             styles.horizontalScroll,
             {
               overflow: 'visible',
-              minHeight: 540,
+              minHeight: CARD_HEIGHT + 80,
               zIndex: 1,
             }
           ]}
-          removeClippedSubviews={false}
-          snapToInterval={375}
+          removeClippedSubviews={true}
+          initialNumToRender={1}
+          maxToRenderPerBatch={2}
+          windowSize={4}
+          snapToInterval={CARD_WIDTH}
           snapToAlignment="start"
           decelerationRate="fast"
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
-          initialNumToRender={3}
-          maxToRenderPerBatch={5}
-          windowSize={10}
           updateCellsBatchingPeriod={50}
           onEndReachedThreshold={0.5}
         />
       ) : (
         <View style={styles.emptyState}>
-          <MaterialIcons name="photo-library" size={64} color="rgba(255, 255, 255, 0.3)" />
+          <MaterialIcons name="photo-library" size={44} color="rgba(255, 255, 255, 0.3)" />
           <Text style={styles.emptyStateText}>No albums found.</Text>
         </View>
       )}

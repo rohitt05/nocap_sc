@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, FlatList, ListRenderItem, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, FlatList, Animated, ActivityIndicator } from 'react-native';
 import { MaterialIcons, Entypo } from '@expo/vector-icons';
 import { Video, AVPlaybackStatus } from 'expo-av';
-import { supabase } from '../../../../../../../lib/supabase'; // ✅ ADD: Supabase client
+import { supabase } from '../../../../../../../lib/supabase';
 import StoryProgressBar from './StoryProgressBar';
+import VibrantCaption from '../../../VibrantCaption';
+import StoryActionSheet from './StoryActionSheet';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -14,6 +16,7 @@ interface Story {
     uploadedTime: string;
     timestamp: number;
     duration: number;
+    caption: string;
 }
 
 interface Friend {
@@ -32,7 +35,7 @@ interface StoryViewerProps {
     currentStoryIndex: number;
     onUserSwipe: (direction: 'left' | 'right') => void;
     onStoryTap: (direction: 'left' | 'right') => void;
-    flatListRef: React.RefObject<FlatList>;
+    flatListRef: React.RefObject<FlatList<any>>;
     onMenuPress: () => void;
     progress: Animated.Value;
     isPaused: boolean;
@@ -64,186 +67,93 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
     const videoRef = useRef<Video>(null);
     const isMountedRef = useRef(true);
 
-    // Media loading states
     const [imageLoading, setImageLoading] = useState<{ [key: string]: boolean }>({});
     const [mediaError, setMediaError] = useState<{ [key: string]: boolean }>({});
-    // ✅ NEW: Track viewed stories to avoid duplicate records
     const [viewedStories, setViewedStories] = useState<Set<string>>(new Set());
+    const [showActionSheet, setShowActionSheet] = useState(false);
 
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
-
             if (videoRef.current) {
-                videoRef.current.unloadAsync().catch(() => {
-                    // Ignore cleanup errors
-                });
+                videoRef.current.unloadAsync().catch(() => { });
             }
         };
     }, []);
 
-    // ✅ NEW: Record story view in database
     const recordStoryView = async (storyId: string) => {
         try {
-            // Avoid duplicate records
-            if (viewedStories.has(storyId)) {
-                console.log('👀 Story already viewed, skipping:', storyId);
-                return;
-            }
-
+            if (viewedStories.has(storyId)) return;
             const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) {
-                console.warn('⚠️ User not authenticated, cannot record view');
-                return;
-            }
-
-            console.log('👀 Recording story view for:', storyId);
-
-            const { error } = await supabase
+            if (userError || !user) return;
+            await supabase
                 .from('story_views')
-                .insert({
-                    story_id: storyId,
-                    viewer_user_id: user.id
-                });
-
-            if (error) {
-                // Ignore duplicate key errors (23505) - user already viewed this story
-                if (error.code === '23505') {
-                    console.log('👀 Story view already recorded (duplicate)');
-                } else {
-                    console.error('❌ Failed to record story view:', error);
-                }
-            } else {
-                console.log('✅ Story view recorded successfully');
-            }
-
-            // Mark as viewed locally to avoid duplicate attempts
+                .insert({ story_id: storyId, viewer_user_id: user.id });
             setViewedStories(prev => new Set([...prev, storyId]));
-
-        } catch (error) {
-            console.warn('⚠️ Error recording story view:', error);
-        }
+        } catch { }
     };
 
-    // ✅ NEW: Record view when story becomes current
     useEffect(() => {
         if (friends.length > 0 && currentUserIndex >= 0 && currentStoryIndex >= 0) {
             const currentFriend = friends[currentUserIndex];
             const currentStory = currentFriend?.stories[currentStoryIndex];
-
             if (currentStory) {
-                // Small delay to ensure story is actually being viewed
                 const viewTimer = setTimeout(() => {
                     recordStoryView(currentStory.id);
-                }, 1000); // Record after 1 second of viewing
-
+                }, 1000);
                 return () => clearTimeout(viewTimer);
             }
         }
     }, [friends, currentUserIndex, currentStoryIndex]);
 
-    const renderStoryItem: ListRenderItem<Friend> = ({ item, index }) => {
+    const renderStoryItem = ({ item, index }: { item: Friend; index: number }) => {
         const currentStory = item.stories[currentStoryIndex] || item.stories[0];
         const isCurrentUser = index === currentUserIndex;
 
-        // Debug: Log media URL for debugging
-        if (isCurrentUser && currentStory) {
-            console.log('🎬 Current story URL:', currentStory.url);
-            console.log('🎬 Story type:', currentStory.type);
-            console.log('🎬 Story ID:', currentStory.id);
-        }
-
-        // SAFE STATUS HANDLER: Enhanced with better error handling
         const handleVideoStatusUpdate = (status: AVPlaybackStatus) => {
             if (!isCurrentUser || !isMountedRef.current) return;
-
             try {
                 if (status.isLoaded) {
-                    console.log('📹 Video loaded successfully');
                     const loading = status.isBuffering || false;
-
-                    if (loading !== isVideoLoading && isMountedRef.current) {
-                        onVideoLoadingChange(loading);
-                    }
-
+                    if (loading !== isVideoLoading && isMountedRef.current) onVideoLoadingChange(loading);
                     if (status.durationMillis && status.positionMillis !== undefined && isMountedRef.current) {
                         const progress = status.positionMillis / status.durationMillis;
                         onVideoProgressUpdate(progress);
                     }
-
-                    // AUTO-PLAY: Ensure video starts playing
                     if (!status.isPlaying && !isPaused && isMountedRef.current) {
-                        console.log('▶️ Auto-starting video playback');
-                        videoRef.current?.playAsync().catch((error) => {
-                            console.warn('⚠️ Auto-play failed:', error);
-                        });
+                        videoRef.current?.playAsync().catch(() => { });
                     }
                 } else if (status.error) {
-                    console.error('❌ Video loading error:', status.error);
                     setMediaError(prev => ({ ...prev, [currentStory.id]: true }));
-                    if (isMountedRef.current) {
-                        onVideoLoadingChange(false);
-                    }
+                    if (isMountedRef.current) onVideoLoadingChange(false);
                 } else {
-                    console.log('📹 Video loading...');
-                    if (!isVideoLoading && isMountedRef.current) {
-                        onVideoLoadingChange(true);
-                    }
+                    if (!isVideoLoading && isMountedRef.current) onVideoLoadingChange(true);
                 }
-            } catch (error) {
-                console.error('📹 Video status update error:', error);
+            } catch {
                 setMediaError(prev => ({ ...prev, [currentStory.id]: true }));
             }
         };
 
-        // IMAGE LOADING HANDLERS
-        const handleImageLoadStart = () => {
-            console.log('🖼️ Image loading started:', currentStory.url);
-            setImageLoading(prev => ({ ...prev, [currentStory.id]: true }));
-            setMediaError(prev => ({ ...prev, [currentStory.id]: false }));
-        };
-
+        const handleImageLoadStart = () => setImageLoading(prev => ({ ...prev, [currentStory.id]: true }));
         const handleImageLoad = () => {
-            console.log('✅ Image loaded successfully');
             setImageLoading(prev => ({ ...prev, [currentStory.id]: false }));
-
-            // ✅ NEW: Record view when image loads successfully and is current
-            if (isCurrentUser) {
-                recordStoryView(currentStory.id);
-            }
+            if (isCurrentUser) recordStoryView(currentStory.id);
         };
+        const handleImageError = () => setMediaError(prev => ({ ...prev, [currentStory.id]: true }));
 
-        const handleImageError = (error: any) => {
-            console.error('❌ Image loading error:', error);
-            setImageLoading(prev => ({ ...prev, [currentStory.id]: false }));
-            setMediaError(prev => ({ ...prev, [currentStory.id]: true }));
-        };
-
-        // VIDEO LOADING HANDLERS
         const handleVideoLoadStart = () => {
-            console.log('📹 Video loading started:', currentStory.url);
-            if (isCurrentUser && isMountedRef.current) {
-                onVideoLoadingChange(true);
-            }
+            if (isCurrentUser && isMountedRef.current) onVideoLoadingChange(true);
             setMediaError(prev => ({ ...prev, [currentStory.id]: false }));
         };
-
         const handleVideoLoad = () => {
-            console.log('✅ Video loaded successfully');
             if (isCurrentUser && isMountedRef.current) {
                 onVideoLoadingChange(false);
-
-                // ✅ NEW: Record view when video loads successfully and is current
                 recordStoryView(currentStory.id);
             }
         };
-
-        const handleVideoError = (error: any) => {
-            console.error('❌ Video loading error:', error);
+        const handleVideoError = () => {
             setMediaError(prev => ({ ...prev, [currentStory.id]: true }));
-            if (isMountedRef.current) {
-                onVideoLoadingChange(false);
-            }
+            if (isMountedRef.current) onVideoLoadingChange(false);
         };
 
         if (!currentStory) {
@@ -259,29 +169,41 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
         return (
             <View style={styles.storySlide}>
                 <View style={styles.storyContentContainer}>
-                    {/* Progress bars */}
                     {isCurrentUser && (
-                        <StoryProgressBar
-                            stories={item.stories}
-                            currentStoryIndex={currentStoryIndex}
-                            progress={progress}
-                            isVideoLoading={isVideoLoading}
-                            videoProgress={videoProgress}
-                        />
+                        <View style={styles.progressBarCaptionAbsolute}>
+                            <StoryProgressBar
+                                stories={item.stories}
+                                currentStoryIndex={currentStoryIndex}
+                                progress={progress}
+                                isVideoLoading={isVideoLoading}
+                                videoProgress={videoProgress}
+                            />
+                            {!!currentStory.caption && (
+                                <View style={styles.captionBubbleWrapper}>
+                                    <View style={styles.captionBubble}>
+                                        <VibrantCaption
+                                            uri={currentStory.type === 'image' ? currentStory.url : ''}
+                                            style={styles.captionText}
+                                            mode="dominant"
+                                            pick={all => all.darkVibrant || all.vibrant || all.dominant || '#fff'}
+                                        >
+                                            {currentStory.caption}
+                                        </VibrantCaption>
+                                        <View style={styles.captionCaret} />
+                                    </View>
+                                </View>
+                            )}
+                        </View>
                     )}
 
-                    {/* ENHANCED: Story Content with Loading States */}
                     {currentStory.type === 'image' ? (
                         <>
-                            {/* LOADING INDICATOR for images */}
                             {imageLoading[currentStory.id] && (
                                 <View style={styles.loadingOverlay}>
                                     <ActivityIndicator size="large" color="#fff" />
                                     <Text style={styles.loadingText}>Loading image...</Text>
                                 </View>
                             )}
-
-                            {/* ERROR STATE for images */}
                             {mediaError[currentStory.id] ? (
                                 <View style={styles.errorOverlay}>
                                     <MaterialIcons name="broken-image" size={48} color="#666" />
@@ -309,15 +231,12 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                         </>
                     ) : (
                         <>
-                            {/* LOADING INDICATOR for videos */}
                             {isCurrentUser && isVideoLoading && (
                                 <View style={styles.loadingOverlay}>
                                     <ActivityIndicator size="large" color="#fff" />
                                     <Text style={styles.loadingText}>Loading video...</Text>
                                 </View>
                             )}
-
-                            {/* ERROR STATE for videos */}
                             {mediaError[currentStory.id] ? (
                                 <View style={styles.errorOverlay}>
                                     <MaterialIcons name="videocam-off" size={48} color="#666" />
@@ -326,9 +245,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                                         style={styles.retryButton}
                                         onPress={() => {
                                             setMediaError(prev => ({ ...prev, [currentStory.id]: false }));
-                                            if (isCurrentUser) {
-                                                onVideoLoadingChange(true);
-                                            }
+                                            if (isCurrentUser) onVideoLoadingChange(true);
                                         }}
                                     >
                                         <Text style={styles.retryText}>Retry</Text>
@@ -352,7 +269,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                         </>
                     )}
 
-                    {/* Tap Zones */}
                     <View style={styles.gestureContainer}>
                         <TouchableOpacity
                             style={styles.leftTapZone}
@@ -361,7 +277,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                             onPressOut={onLongPressEnd}
                             activeOpacity={1}
                         />
-
                         <TouchableOpacity
                             style={styles.rightTapZone}
                             onPress={() => onStoryTap('right')}
@@ -371,22 +286,29 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                         />
                     </View>
 
-                    {/* Menu Icon */}
                     <TouchableOpacity
                         style={styles.menuIcon}
-                        onPress={onMenuPress}
+                        onPress={() => setShowActionSheet(true)}
                         activeOpacity={0.7}
                     >
                         <Entypo name="dots-two-vertical" size={20} color="white" />
                     </TouchableOpacity>
 
-                    {/* Reply Footer */}
-                    <View style={styles.overlayFooter}>
+                    {/* <View style={styles.overlayFooter}>
                         <TouchableOpacity style={styles.replyButton}>
                             <MaterialIcons name="reply" size={18} color="white" />
                             <Text style={styles.replyText}>Reply to {item.name.split(' ')[0]}</Text>
                         </TouchableOpacity>
-                    </View>
+                    </View> */}
+
+                    <StoryActionSheet
+                        visible={showActionSheet}
+                        onClose={() => setShowActionSheet(false)}
+                        onReport={() => {
+                            // TODO: Add your report story logic, e.g. supabase reporting mutation for story id
+                            setShowActionSheet(false);
+                        }}
+                    />
                 </View>
             </View>
         );
@@ -407,7 +329,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                 onMomentumScrollEnd={(event) => {
                     const contentOffsetX = event.nativeEvent.contentOffset.x;
                     const newUserIndex = Math.round(contentOffsetX / screenWidth);
-
                     if (newUserIndex !== currentUserIndex) {
                         if (newUserIndex > currentUserIndex) {
                             onUserSwipe('left');
@@ -433,12 +354,12 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
 const styles = StyleSheet.create({
     storiesContainer: {
         flex: 1,
-        marginTop: -20,
+        marginTop: 0,
     },
     storySlide: {
         width: screenWidth,
         paddingHorizontal: 4,
-        paddingTop: 20,
+        paddingTop: 0,
     },
     storyContentContainer: {
         flex: 1,
@@ -447,12 +368,65 @@ const styles = StyleSheet.create({
         position: 'relative',
         backgroundColor: '#111',
     },
+    progressBarCaptionAbsolute: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        zIndex: 50,
+        alignItems: 'flex-start',
+        paddingHorizontal: 12,
+        paddingTop: 6,
+    },
+    captionBubbleWrapper: {
+        marginTop: 28,
+        width: '100%',
+        alignItems: 'flex-start',
+    },
+    captionBubble: {
+        backgroundColor: 'rgba(240, 246, 249, 0.2)',
+        borderRadius: 13,
+        paddingVertical: 7,
+        paddingHorizontal: 16,
+        marginLeft: 4,
+        maxWidth: '78%',
+        position: 'relative',
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.16,
+        shadowRadius: 4,
+    },
+    captionCaret: {
+        position: 'absolute',
+        left: 14,
+        top: -11,
+        width: 0,
+        height: 0,
+        borderLeftWidth: 8,
+        borderRightWidth: 8,
+        borderBottomWidth: 11,
+        borderStyle: 'solid',
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: 'rgba(240, 246, 249, 0.2)',
+    },
+    captionText: {
+        color: '#fff',
+        fontWeight: '400',
+        fontSize: 14.2,
+        textAlign: 'left',
+        lineHeight: 19,
+        textShadowColor: 'rgba(0,0,0,0.16)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+    },
     fullSizeStoryMedia: {
         width: '100%',
         height: '100%',
         borderRadius: 16,
     },
-    // Loading and error states
     loadingOverlay: {
         position: 'absolute',
         top: 0,

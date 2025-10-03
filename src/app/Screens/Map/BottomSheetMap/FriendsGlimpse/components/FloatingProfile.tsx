@@ -6,7 +6,7 @@ interface Friend {
     name: string;
     username: string;
     profilePic: string;
-    stories: Story[]; // ✅ FIXED: Changed from 'story' to 'stories' array to match FriendsGlimpse
+    stories: Story[];
     lastSeen: string;
     isOnline: boolean;
 }
@@ -65,14 +65,14 @@ const styles = StyleSheet.create({
         height: 58,
         borderRadius: 29,
         padding: 3,
-        backgroundColor: '#FF3040',
+        backgroundColor: '#c4c7e4',       // Fixed - only one #
         elevation: 20,
-        shadowColor: '#FF3040',
+        shadowColor: '#c4c7e4',           // Fixed - only one #
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.6,
         shadowRadius: 16,
         borderWidth: 3,
-        borderColor: 'rgba(255, 48, 64, 0.8)',
+        borderColor: '#c4c7e4',
     },
     floatingProfileImage: {
         width: '100%',
