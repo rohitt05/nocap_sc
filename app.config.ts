@@ -3,7 +3,6 @@ import { ConfigContext, ExpoConfig } from "@expo/config";
 const IS_DEV = process.env.APP_VARIANT === "development";
 const IS_PREVIEW = process.env.APP_VARIANT === "preview";
 
-// Log build variant
 console.log(
   "Current build variant:",
   IS_DEV ? "DEVELOPMENT" : IS_PREVIEW ? "PREVIEW" : "PRODUCTION"
@@ -43,7 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: true,
+    newArchEnabled: false, // SDK 52 stability
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
@@ -69,18 +68,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
-        // Uncomment ONLY if needed:
-        // "android.permission.ACTIVITY_RECOGNITION",
       ],
-      versionCode: 25, // INCREMENT this for every Play upload!
-      targetSdkVersion: 36, // API 36 (Android 16) per Expo SDK 54
-      // Fix AndroidX manifest conflict
-      intentFilters: [
-        {
-          action: "MAIN",
-          category: ["LAUNCHER"]
-        }
-      ]
+      versionCode: 25,
     } as any,
     web: {
       favicon: "./assets/favicon.png",
@@ -93,20 +82,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           android: {
             compileSdkVersion: 35,
-            targetSdkVersion: 36,
-            buildToolsVersion: "35.0.0",
-            kotlinVersion: "2.0.21",
+            targetSdkVersion: 34,
+            buildToolsVersion: "34.0.0",
+            kotlinVersion: "1.9.24",
             useAndroidX: true,
             enableProguardInReleaseBuilds: false,
           },
           ios: {
-            deploymentTarget: "15.1",
+            deploymentTarget: "15.1",  // Meets the minimum requirement
           },
         },
       ],
       "expo-font",
       "expo-video",
-      "expo-web-browser",
       [
         "expo-sensors",
         {
@@ -133,7 +121,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "@rnmapbox/maps",
         {
           RNMapboxMapsDownloadToken: downloadToken || "",
-          RNMapboxMapsVersion: "11.0.0",
+          RNMapboxMapsVersion: "10.16.0", // SDK 52 compatible version
         },
       ],
       [
