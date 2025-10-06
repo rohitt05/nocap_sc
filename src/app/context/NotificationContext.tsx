@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto'
+// import 'react-native-url-polyfill/auto'
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import * as Notifications from "expo-notifications";
 import { EventSubscription } from 'expo-modules-core';

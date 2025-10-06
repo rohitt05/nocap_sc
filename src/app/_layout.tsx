@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto'
+// import 'react-native-url-polyfill/auto'
 import React, { useState, useEffect } from "react";
 import { Slot, Stack } from "expo-router";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

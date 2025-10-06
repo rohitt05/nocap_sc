@@ -1,4 +1,4 @@
-import "react-native-url-polyfill/auto";
+// import "react-native-url-polyfill/auto";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 

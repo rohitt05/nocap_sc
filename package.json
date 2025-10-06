@@ -15,8 +15,6 @@
     "ios:preview": "set APP_VARIANT=preview&& expo start --ios"
   },
   "dependencies": {
-    "@expo/config-plugins": "~9.0.0",
-    "@expo/prebuild-config": "^8.0.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/blur": "^4.4.1",
     "@react-native-community/datetimepicker": "8.2.0",
@@ -75,7 +73,6 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
-    "@types/react-native": "^0.73.0",
     "@types/react-native-check-box": "^2.1.6",
     "@types/uuid": "^10.0.0",
     "react-native-check-box": "^2.1.7",

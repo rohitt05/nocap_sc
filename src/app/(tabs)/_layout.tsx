@@ -1,4 +1,3 @@
-import 'react-native-reanimated';
 import { Tabs } from 'expo-router';
 import { Entypo, Ionicons } from '@expo/vector-icons';
 import { HomeHeader, StandardHeader } from '../../components/Header/Header';
